@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - SplitEasy</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <div class="d-flex" id="wrapper">
+        <!-- Sidebar -->
+        <div class="bg-dark text-white" id="sidebar-wrapper">
+            <div class="sidebar-heading text-center py-4 primary-text fs-4 fw-bold text-uppercase border-bottom">
+                <i class="fas fa-user-shield me-2"></i>Admin Zone
+            </div>
+            <div class="list-group list-group-flush my-3">
+                <a href="#" class="list-group-item list-group-item-action bg-transparent second-text active"
+                    id="nav-dashboard">
+                    <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent second-text" id="nav-users">
+                    <i class="fas fa-users me-2"></i>Users
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent second-text" id="nav-roles">
+                    <i class="fas fa-user-tag me-2"></i>Roles
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent second-text"
+                    id="nav-reclamations">
+                    <i class="fas fa-ticket-alt me-2"></i>Reclamations
+                </a>
+                <a href="#" class="list-group-item list-group-item-action bg-transparent text-danger fw-bold mt-5"
+                    id="nav-logout">
+                    <i class="fas fa-power-off me-2"></i>Logout
+                </a>
+            </div>
+        </div>
+        <!-- /#sidebar-wrapper -->
+
+        <!-- Page Content -->
+        <div id="page-content-wrapper">
+            <nav class="navbar navbar-expand-lg navbar-light bg-transparent py-4 px-4">
+                <div class="d-flex align-items-center">
+                    <i class="fas fa-align-left primary-text fs-4 me-3" id="menu-toggle"></i>
+                    <h2 class="fs-2 m-0" id="page-title">Dashboard</h2>
+                </div>
+
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse"
+                    data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent"
+                    aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle second-text fw-bold" href="#" id="navbarDropdown"
+                                role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user me-2"></i><span id="admin-username">Admin</span>
+                            </a>
+                            <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                                <li><a class="dropdown-item" href="/frontend/home.html">Back to App</a></li>
+                                <li><a class="dropdown-item" href="#" id="logout-btn">Logout</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <div class="container-fluid px-4" id="main-content">
+                <!-- Dynamic Content Will Be Loaded Here -->
+
+                <!-- Dashboard Stats (Default) -->
+                <div id="view-dashboard">
+                    <div class="row g-3 my-2">
+                        <div class="col-md-3">
+                            <div
+                                class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded">
+                                <div>
+                                    <h3 class="fs-2" id="stat-users-count">0</h3>
+                                    <p class="fs-5">Users</p>
+                                </div>
+                                <i class="fas fa-users fs-1 primary-text border rounded-full secondary-bg p-3"></i>
+                            </div>
+                        </div>
+
+                        <div class="col-md-3">
+                            <div
+                                class="p-3 bg-white shadow-sm d-flex justify-content-around align-items-center rounded">
+                                <div>
+                                    <h3 class="fs-2" id="stat-reclamations-count">0</h3>
+                                    <p class="fs-5">Tickets</p>
+                                </div>
+                                <i class="fas fa-ticket-alt fs-1 primary-text border rounded-full secondary-bg p-3"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Users View -->
+                <div id="view-users" class="d-none">
+                    <div class="row my-5">
+                        <h3 class="fs-4 mb-3">All Users</h3>
+                        <div class="col">
+                            <div class="table-responsive bg-white rounded shadow-sm p-3">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Username</th>
+                                            <th scope="col">Email</th>
+                                            <th scope="col">Role</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="users-table-body">
+                                        <!-- Rows loaded via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Roles View -->
+                <div id="view-roles" class="d-none">
+                    <div class="row my-5">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 class="fs-4">Roles & Permissions</h3>
+                            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#roleModal">
+                                <i class="fas fa-plus me-2"></i>New Role
+                            </button>
+                        </div>
+                        <div class="col">
+                            <div class="table-responsive bg-white rounded shadow-sm p-3">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">Name</th>
+                                            <th scope="col">Permissions</th>
+                                            <th scope="col">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="roles-table-body">
+                                        <!-- Rows loaded via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Reclamations View -->
+                <div id="view-reclamations" class="d-none">
+                    <div class="row my-5">
+                        <h3 class="fs-4 mb-3">Support Tickets</h3>
+                        <div class="col">
+                            <div class="table-responsive bg-white rounded shadow-sm p-3">
+                                <table class="table table-hover align-middle">
+                                    <thead>
+                                        <tr>
+                                            <th scope="col">ID</th>
+                                            <th scope="col">User</th>
+                                            <th scope="col">Subject</th>
+                                            <th scope="col">Status</th>
+                                            <th scope="col">Date</th>
+                                            <th scope="col">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="reclamations-table-body">
+                                        <!-- Rows loaded via JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+    <!-- /#wrapper -->
+
+    <!-- Role Modal -->
+    <div class="modal fade" id="roleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Manage Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="roleForm">
+                        <div class="mb-3">
+                            <label class="form-label">Role Name</label>
+                            <input type="text" class="form-control" id="roleName" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Permissions</label>
+                            <div class="form-check">
+                                <input class="form-check-input permission-check" type="checkbox" value="*" id="permAll">
+                                <label class="form-check-label fw-bold" for="permAll">All Access (*)</label>
+                            </div>
+                            <hr>
+                            <div class="form-check">
+                                <input class="form-check-input permission-check" type="checkbox" value="view_users"
+                                    id="permViewUsers">
+                                <label class="form-check-label" for="permViewUsers">View Users</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input permission-check" type="checkbox" value="manage_users"
+                                    id="permManageUsers">
+                                <label class="form-check-label" for="permManageUsers">Manage Users (Edit/Ban)</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input permission-check" type="checkbox" value="view_roles"
+                                    id="permViewRoles">
+                                <label class="form-check-label" for="permViewRoles">View Roles</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input permission-check" type="checkbox" value="manage_roles"
+                                    id="permManageRoles">
+                                <label class="form-check-label" for="permManageRoles">Manage Roles</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input permission-check" type="checkbox"
+                                    value="view_reclamations" id="permViewRec">
+                                <label class="form-check-label" for="permViewRec">View Reclamations</label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input permission-check" type="checkbox"
+                                    value="manage_reclamations" id="permManageRec">
+                                <label class="form-check-label" for="permManageRec">Manage Reclamations</label>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveRoleBtn">Save Role</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Role Modal -->
+    <div class="modal fade" id="userRoleModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Assign Role</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="assignUserId">
+                    <div class="mb-3">
+                        <label class="form-label">Select Role</label>
+                        <select class="form-select" id="assignRoleSelect">
+                            <!-- Populated by JS -->
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                    <button type="button" class="btn btn-primary" id="saveUserRoleBtn">Assign</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/script.js"></script>
+</body>
+
+</html>

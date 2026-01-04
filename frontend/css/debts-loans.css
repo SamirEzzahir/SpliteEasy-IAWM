@@ -1,0 +1,231 @@
+/* =========================================================
+   🎨 Debts & Loans Page Styles
+   ========================================================= */
+
+:root {
+    --primary-color: #0d6efd;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --info-color: #0dcaf0;
+    --danger-color: #dc3545;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+}
+
+body {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Welcome Banner */
+.welcome-banner {
+    background: linear-gradient(135deg, var(--primary-color) 0%, #0056b3 100%);
+    color: white;
+    border-radius: 16px;
+    padding: 3rem 2rem;
+    margin-bottom: 2rem;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    position: relative;
+    overflow: hidden;
+}
+
+.welcome-banner::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    right: -50%;
+    width: 200%;
+    height: 200%;
+    background: radial-gradient(circle, rgba(255, 255, 255, 0.1) 0%, transparent 70%);
+    animation: pulse 3s ease-in-out infinite;
+    pointer-events: none;
+    z-index: 1;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        transform: scale(1);
+        opacity: 0.5;
+    }
+
+    50% {
+        transform: scale(1.1);
+        opacity: 0.3;
+    }
+}
+
+.welcome-banner h1,
+.welcome-banner p,
+.welcome-banner .d-flex {
+    position: relative;
+    z-index: 2;
+}
+
+.welcome-banner .btn-light,
+.welcome-banner .btn-outline-light {
+    background-color: rgba(255, 255, 255, 0.15);
+    border-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+    padding: 0.75rem 1.5rem;
+}
+
+.welcome-banner .btn-light:hover,
+.welcome-banner .btn-outline-light:hover {
+    background-color: rgba(255, 255, 255, 0.25);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-2px);
+}
+
+/* Statistics Cards */
+.stat-card {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    border: none;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 28px;
+    color: white;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+}
+
+.stat-icon.bg-danger {
+    background: linear-gradient(135deg, var(--danger-color), #c82333);
+}
+
+.stat-icon.bg-success {
+    background: linear-gradient(135deg, var(--success-color), #20c997);
+}
+
+.stat-icon.bg-info {
+    background: linear-gradient(135deg, var(--info-color), #20c997);
+}
+
+/* Tabs */
+.nav-tabs-custom {
+    border-bottom: none;
+    background-color: white;
+    border-radius: 16px;
+    padding: 0.5rem;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+}
+
+.nav-tabs-custom .nav-item {
+    flex-grow: 1;
+    text-align: center;
+}
+
+.nav-tabs-custom .nav-link {
+    border: none;
+    border-radius: 12px;
+    color: var(--dark-color);
+    font-weight: 600;
+    padding: 0.75rem 1rem;
+    transition: all 0.3s ease;
+    margin: 0 0.25rem;
+    box-shadow: 0 4px 10px rgb(0 51 105 / 30%);
+}
+
+.nav-tabs-custom .nav-link:hover {
+    background-color: var(--light-color);
+    color: var(--primary-color);
+}
+
+.nav-tabs-custom .nav-link.active {
+    background: linear-gradient(135deg, #cce1ff45 0%, #ffffff 100%);
+    color: white;
+    box-shadow: 0 4px 10px rgb(0 123 255 / 51%);
+}
+
+.nav-tabs-custom .nav-link .badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    vertical-align: middle;
+}
+
+/* Debt/Loan Cards */
+.debt-loan-card {
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border: 1px solid #e9ecef;
+    transition: all 0.3s ease;
+}
+
+.debt-loan-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    border-color: var(--primary-color);
+}
+
+.progress {
+    border-radius: 10px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 10px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .welcome-banner {
+        padding: 2rem 1rem;
+    }
+
+    .welcome-banner h1 {
+        font-size: 2rem;
+    }
+
+    .welcome-banner p {
+        font-size: 1rem;
+    }
+
+    .welcome-banner .btn-light,
+    .welcome-banner .btn-outline-light {
+        padding: 0.6rem 1.2rem;
+        font-size: 0.9rem;
+    }
+
+    .stat-icon {
+        width: 50px;
+        height: 50px;
+        font-size: 24px;
+    }
+
+    .stat-card h3 {
+        font-size: 1.8rem;
+    }
+
+    .nav-tabs-custom .nav-link {
+        padding: 0.6rem 0.8rem;
+        font-size: 0.9rem;
+    }
+
+    .debt-loan-card .d-flex {
+        flex-direction: column;
+    }
+
+    .debt-loan-card .btn {
+        width: 100%;
+        margin-bottom: 0.5rem;
+    }
+}

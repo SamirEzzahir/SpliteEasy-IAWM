@@ -1,0 +1,333 @@
+<!-- frontend\index.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SplitEasy – Simplify Shared Expenses</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css">
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      scroll-behavior: smooth;
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #4e73df, #1cc88a);
+      color: white;
+      padding: 120px 20px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .hero h1 span.typing {
+      border-right: 3px solid #fff;
+      padding-right: 5px;
+      animation: blink 0.8s infinite;
+    }
+
+    @keyframes blink {
+
+      0%,
+      100% {
+        border-color: transparent;
+      }
+
+      50% {
+        border-color: white;
+      }
+    }
+
+    /* Features */
+    .feature-card {
+      transition: transform 0.3s ease, box-shadow 0.3s ease;
+    }
+
+    .feature-card:hover {
+      transform: translateY(-8px);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Screenshot */
+    .screenshot {
+      max-width: 100%;
+      border-radius: 15px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    }
+
+    /* Footer */
+    footer {
+      background: #f8f9fc;
+      padding: 20px 0;
+    }
+  </style>
+  <style>
+    /* Smooth gradient button */
+    .btn-gradient {
+      background: linear-gradient(90deg, #007bff, #00b4d8);
+      color: #fff !important;
+      border: none;
+      transition: all 0.3s ease;
+    }
+
+    .btn-gradient:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0, 123, 255, 0.3);
+    }
+
+    /* Underline effect on hover */
+    .hover-underline {
+      position: relative;
+      transition: color 0.2s ease;
+    }
+
+    .hover-underline::after {
+      content: "";
+      position: absolute;
+      width: 0%;
+      height: 2px;
+      left: 0;
+      bottom: -3px;
+      background-color: #007bff;
+      transition: width 0.3s ease;
+    }
+
+    .hover-underline:hover::after {
+      width: 100%;
+    }
+
+    /* Glassy effect (optional aesthetic boost) */
+    .backdrop-blur {
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar navbar-expand-lg shadow-sm sticky-top bg-white bg-opacity-90 backdrop-blur">
+    <div class="container py-2">
+      <!-- Brand -->
+      <a class="navbar-brand fw-bold d-flex align-items-center gap-2 text-primary" href="#">
+        <i class="bi bi-cash-coin fs-4"></i> SplitEasy
+      </a>
+
+      <!-- Toggler -->
+      <button class="navbar-toggler border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav"
+        aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+
+      <!-- Menu -->
+      <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+        <ul class="navbar-nav align-items-lg-center gap-lg-3 text-center">
+          <li class="nav-item">
+            <a class="nav-link fw-medium text-dark hover-underline" href="#features">Features</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link fw-medium text-dark hover-underline" href="#pricing">Pricing</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link fw-medium text-dark hover-underline" href="login.html">Login</a>
+          </li>
+          <li class="nav-item mt-2 mt-lg-0">
+            <a class="btn btn-gradient px-4 py-2 fw-semibold shadow-sm" href="signup.html">Get Started</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Custom Styles -->
+
+
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container">
+      <h1 class="display-4 fw-bold">
+        <span class="typing"></span>
+      </h1>
+      <p class="lead mt-3">Track shared bills, trips, and daily expenses. No more awkward money talks.</p>
+      <a href="signup.html" class="btn btn-lg btn-light fw-bold mt-3">Start for Free</a>
+    </div>
+  </section>
+
+  <!-- Features -->
+  <section id="features" class="py-5">
+    <div class="container text-center">
+      <h2 class="fw-bold mb-5">Why Choose SplitEasy?</h2>
+      <div class="row g-4">
+        <div class="col-md-4">
+          <div class="p-4 border rounded shadow-sm h-100 feature-card">
+            <i class="bi bi-people feature-icon fs-1 text-primary"></i>
+            <h5 class="mt-3">Group Management</h5>
+            <p>Create groups for trips, roommates, or family expenses in seconds.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 border rounded shadow-sm h-100 feature-card">
+            <i class="bi bi-cash-stack feature-icon fs-1 text-success"></i>
+            <h5 class="mt-3">Smart Balances</h5>
+            <p>Know exactly who owes whom, with auto-calculated balances.</p>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="p-4 border rounded shadow-sm h-100 feature-card">
+            <i class="bi bi-phone feature-icon fs-1 text-info"></i>
+            <h5 class="mt-3">Cross-Platform</h5>
+            <p>Access your expenses anytime, anywhere – mobile & desktop friendly.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Screenshot -->
+  <section id="screenshots" class="py-5 bg-light">
+    <div class="container text-center">
+      <h2 class="fw-bold mb-4">See SplitEasy in Action</h2>
+      <img src="assets/demo-screenshot.png" alt="App screenshot" class="screenshot">
+    </div>
+  </section>
+
+  <!-- Pricing -->
+  <section id="pricing" class="py-5">
+    <div class="container text-center">
+      <h2 class="fw-bold mb-4">Simple Pricing</h2>
+      <div class="row justify-content-center">
+        <div class="col-md-4">
+          <div class="card shadow border-0">
+            <div class="card-body p-4">
+              <h5 class="card-title fw-bold">Free Plan</h5>
+              <p class="display-6 fw-bold">$0</p>
+              <ul class="list-unstyled mb-3">
+                <li>✅ Unlimited groups</li>
+                <li>✅ Track expenses</li>
+                <li>✅ Mobile friendly</li>
+              </ul>
+              <a href="signup.html" class="btn btn-primary w-100">Get Started</a>
+            </div>
+          </div>
+        </div>
+        <div class="col-md-4 mt-4 mt-md-0">
+          <div class="card shadow border-primary">
+            <div class="card-body p-4">
+              <h5 class="card-title fw-bold">Pro Plan</h5>
+              <p class="display-6 fw-bold">$4.99/mo</p>
+              <ul class="list-unstyled mb-3">
+                <li>🚀 Advanced reports</li>
+                <li>🚀 Export data</li>
+                <li>🚀 Priority support</li>
+              </ul>
+              <a href="signup.html" class="btn btn-outline-primary w-100">Upgrade</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="text-center">
+    <div class="container">
+      <p class="mb-0">© <span id="year"></span> SplitEasy. All rights reserved.</p>
+      <small>
+        <a href="#">Privacy</a> · <a href="#">Terms</a> · <a href="#">Contact</a>
+      </small>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // Typing effect for hero
+    const text = ["Split bills instantly.", "Track shared expenses.", "Make life easier with SplitEasy."];
+    let index = 0, charIndex = 0;
+    const typingSpan = document.querySelector(".typing");
+
+    function typeEffect() {
+      if (charIndex < text[index].length) {
+        typingSpan.textContent += text[index].charAt(charIndex);
+        charIndex++;
+        setTimeout(typeEffect, 100);
+      } else {
+        setTimeout(() => {
+          typingSpan.textContent = "";
+          charIndex = 0;
+          index = (index + 1) % text.length;
+          typeEffect();
+        }, 2000);
+      }
+    }
+    typeEffect();
+
+    // Dynamic year
+    document.getElementById("year").textContent = new Date().getFullYear();
+
+    // Animate features on scroll
+    const features = document.querySelectorAll(".feature-card");
+    const observer = new IntersectionObserver(entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          entry.target.classList.add("animate__animated", "animate__fadeInUp");
+        }
+      });
+    }, { threshold: 0.2 });
+
+    features.forEach(card => observer.observe(card));
+  </script>
+
+  <script>
+    // -----------------------------
+    // 🔐 Auth Redirect Logic
+    // -----------------------------
+    document.addEventListener("DOMContentLoaded", () => {
+      const token = localStorage.getItem("token");
+
+      // Handle "Start for Free" button
+      const startBtn = document.querySelector('a[href="signup.html"].btn');
+      if (startBtn) {
+        startBtn.addEventListener("click", (e) => {
+          e.preventDefault();
+          if (token) {
+            // already logged in → go home
+            window.location.href = "home.html";
+          } else {
+            // not logged in → go to signup page
+            window.location.href = "signup.html";
+          }
+        });
+      }
+
+      // Handle "Login" and "Signup" links in navbar or anywhere else
+      document.querySelectorAll('a[href="login.html"], a[href="signup.html"]').forEach(link => {
+        link.addEventListener("click", (e) => {
+          e.preventDefault();
+          const target = link.getAttribute("href");
+
+          if (token) {
+            // already logged in → go home
+            window.location.href = "home.html";
+          } else {
+            // not logged in → go to clicked link
+            window.location.href = target;
+          }
+        });
+      });
+    });
+  </script>
+
+
+
+  <!-- Animate.css for scroll animations -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+</body>
+
+</html>

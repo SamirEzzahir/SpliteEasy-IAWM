@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CORS Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 10px 0; padding: 10px; border-radius: 5px; }
+        .success { background-color: #d4edda; color: #155724; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 200px; }
+    </style>
+</head>
+<body>
+    <h1>SplitEasy API CORS Test</h1>
+    
+    <div>
+        <h3>Test Registration</h3>
+        <input type="email" id="regEmail" placeholder="Email" value="test@example.com">
+        <input type="password" id="regPassword" placeholder="Password" value="password123">
+        <input type="text" id="regFirstName" placeholder="First Name" value="Test">
+        <input type="text" id="regLastName" placeholder="Last Name" value="User">
+        <br>
+        <button onclick="testRegister()">Register User</button>
+    </div>
+    
+    <div>
+        <h3>Test Login</h3>
+        <input type="email" id="loginEmail" placeholder="Email" value="test@example.com">
+        <input type="password" id="loginPassword" placeholder="Password" value="password123">
+        <br>
+        <button onclick="testLogin()">Login User</button>
+    </div>
+    
+    <div>
+        <h3>Test Health Check</h3>
+        <button onclick="testHealth()">Check Health</button>
+    </div>
+    
+    <div id="results"></div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000/api';
+        const HEALTH_URL = 'http://localhost:8000/health';
+        
+        function addResult(message, isSuccess = true) {
+            const results = document.getElementById('results');
+            const div = document.createElement('div');
+            div.className = `result ${isSuccess ? 'success' : 'error'}`;
+            div.innerHTML = `<strong>${new Date().toLocaleTimeString()}</strong>: ${message}`;
+            results.insertBefore(div, results.firstChild);
+        }
+        
+        async function testHealth() {
+            try {
+                const response = await fetch(HEALTH_URL);
+                const data = await response.json();
+                addResult(`Health Check: ${data.status} - Server is running!`, true);
+            } catch (error) {
+                addResult(`Health Check Failed: ${error.message}`, false);
+            }
+        }
+        
+        async function testRegister() {
+            try {
+                const email = document.getElementById('regEmail').value;
+                const password = document.getElementById('regPassword').value;
+                const firstName = document.getElementById('regFirstName').value;
+                const lastName = document.getElementById('regLastName').value;
+                
+                const response = await fetch(`${API_BASE}/auth/register`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: email.split('@')[0],
+                        email,
+                        password,
+                        firstName,
+                        lastName
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult(`Registration Success: User ${data.data.user.firstName} registered!`, true);
+                } else {
+                    addResult(`Registration Failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                addResult(`Registration Error: ${error.message}`, false);
+            }
+        }
+        
+        async function testLogin() {
+            try {
+                const email = document.getElementById('loginEmail').value;
+                const password = document.getElementById('loginPassword').value;
+                
+                const response = await fetch(`${API_BASE}/auth/login`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        email,
+                        password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    addResult(`Login Success: Welcome ${data.data.user.firstName}! Token: ${data.data.token.substring(0, 20)}...`, true);
+                    localStorage.setItem('token', data.data.token);
+                } else {
+                    addResult(`Login Failed: ${data.message}`, false);
+                }
+            } catch (error) {
+                addResult(`Login Error: ${error.message}`, false);
+            }
+        }
+        
+        // Test health on page load
+        window.onload = function() {
+            addResult('Page loaded. Testing server connection...', true);
+            testHealth();
+        };
+    </script>
+</body>
+</html>

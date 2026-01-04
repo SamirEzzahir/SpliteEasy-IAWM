@@ -1,0 +1,775 @@
+<!-- frontend\groups.html -->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Split App - Groups</title>
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/groups.css" rel="stylesheet">
+
+</head>
+
+<body>
+
+  <!-- ✅ Navbar -->
+  <div id="navbar" class="d-none d-md-block"></div>
+  <!-- ✅ Mobile Navbar -->
+  <div id="navbarMobile" class="d-md-none"></div>
+
+
+
+
+  <!-- Desktop Groups Table -->
+  <div class="container mt-5 d-none d-md-block">
+    <!-- Header Section -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+          <h2 class="mb-0">
+            <i class="bi bi-people-fill me-2 text-primary"></i>My Groups
+          </h2>
+          <div class="btn-group" role="group">
+            <a class="btn btn-primary" href="dashboard.html">
+              <i class="bi bi-receipt me-1"></i>All my Expense
+            </a>
+            <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+              <i class="bi bi-plus-circle me-1"></i>Create Group
+            </button>
+            <button class="btn btn-success" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+              <i class="bi bi-receipt me-1"></i>Add Expense
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Statistics -->
+    <div class="row mb-4" id="summaryStats">
+      <div class="col-md-3">
+        <div class="summary-card card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-people fs-1 text-primary mb-2"></i>
+            <h5 class="card-title">Total Groups</h5>
+            <h3 class="mb-0 text-primary" id="totalGroups">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="summary-card card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-heart fs-1 text-success mb-2"></i>
+            <h5 class="card-title">Total Friends</h5>
+            <h3 class="mb-0 text-success" id="totalFriends">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="summary-card card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-cash-stack fs-1 text-warning mb-2"></i>
+            <h5 class="card-title">Total Expenses</h5>
+            <h3 class="mb-0 text-warning" id="totalExpenses">0</h3>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3">
+        <div class="summary-card card h-100">
+          <div class="card-body text-center">
+            <i class="bi bi-exclamation-triangle fs-1 text-warning mb-2"></i>
+            <h5 class="card-title">Unsettled Groups</h5>
+            <h3 class="mb-0 text-warning" id="unsettledGroups">0</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="row mb-4">
+      <div class="col-md-6">
+        <div class="search-container">
+          <i class="bi bi-search search-icon"></i>
+          <input type="text" class="form-control" id="groupSearch" placeholder="Search groups...">
+        </div>
+      </div>
+      <div class="col-md-6">
+        <select class="form-select" id="groupFilter">
+          <option value="">All Groups</option>
+          <option value="Home">Home</option>
+          <option value="Couple">Couple</option>
+          <option value="Trip">Trip</option>
+          <option value="Other">Other</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Groups Table -->
+    <div class="table-enhanced">
+      <table class="table table-hover align-middle text-center mb-0">
+        <thead>
+          <tr>
+            <th><i class="bi bi-hash me-1"></i>ID</th>
+            <th><i class="bi bi-tag me-1"></i>Name</th>
+            <th><i class="bi bi-currency-exchange me-1"></i>Currency</th>
+            <th><i class="bi bi-person-crown me-1"></i>Owner</th>
+            <th><i class="bi bi-people me-1"></i>Members</th>
+            <th><i class="bi bi-calendar me-1"></i>Created</th>
+            <th><i class="bi bi-gear me-1"></i>Actions</th>
+          </tr>
+        </thead>
+        <tbody id="groupsTable">
+          <tr>
+            <td colspan="7" class="text-center text-muted py-4">
+              <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+              </div>
+              <div class="mt-2">Loading groups...</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Mobile Groups -->
+  <div class="d-md-none mt-4">
+    <div class="container">
+      <!-- Mobile Header -->
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="d-flex justify-content-between align-items-center">
+            <h4 class="mb-0">
+              <i class="bi bi-people-fill me-2 text-primary"></i>Groups
+            </h4>
+            <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#createGroupModal">
+              <i class="bi bi-plus-circle me-1"></i>Create
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Summary Cards -->
+      <div class="row mb-3" id="mobileSummaryStats">
+        <div class="col-6">
+          <div class="summary-card card h-100">
+            <div class="card-body text-center p-2">
+              <i class="bi bi-people fs-4 text-primary mb-1"></i>
+              <h6 class="mb-0 text-primary" id="mobileTotalGroups">0</h6>
+              <small class="text-muted">Groups</small>
+            </div>
+          </div>
+        </div>
+        <div class="col-6">
+          <div class="summary-card card h-100">
+            <div class="card-body text-center p-2">
+              <i class="bi bi-heart fs-4 text-success mb-1"></i>
+              <h6 class="mb-0 text-success" id="mobileTotalFriends">0</h6>
+              <small class="text-muted">Friends</small>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Search -->
+      <div class="row mb-3">
+        <div class="col-12">
+          <div class="search-container">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" class="form-control" id="mobileGroupSearch" placeholder="Search groups...">
+          </div>
+        </div>
+      </div>
+
+      <!-- Mobile Groups Cards -->
+      <div class="container my-3" id="groupsMobileCards">
+        <div class="text-center text-muted py-4">
+          <div class="spinner-border text-primary" role="status">
+            <span class="visually-hidden">Loading...</span>
+          </div>
+          <div class="mt-2">Loading groups...</div>
+        </div>
+      </div>
+
+      <!-- Floating Action Button -->
+      <button class="fab" data-bs-toggle="modal" data-bs-target="#addExpenseModal">
+        <i class="bi bi-plus-lg"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Modals -->
+  <!-- Create Group Modal -->
+  <div class="modal fade" id="createGroupModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-plus-circle me-2"></i>Create New Group
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-4">
+          <form id="createGroupForm">
+            <div class="row mb-3">
+              <div class="col-md-8">
+                <label for="groupTitle" class="form-label fw-semibold">
+                  <i class="bi bi-tag me-1"></i>Group Name
+                </label>
+                <input type="text" class="form-control" id="groupTitle"
+                  placeholder="e.g. Trip to Paris, House Expenses..." required>
+              </div>
+              <div class="col-md-4">
+                <label for="groupType" class="form-label fw-semibold">
+                  <i class="bi bi-grid me-1"></i>Category
+                </label>
+                <select class="form-select" id="groupType" required>
+                  <option value="Home">🏠 Home</option>
+                  <option value="Couple">💕 Couple</option>
+                  <option value="Trip">✈️ Trip</option>
+                  <option value="Work">💼 Work</option>
+                  <option value="Other">📝 Other</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-12">
+                <div class="form-check form-switch">
+                  <input class="form-check-input" type="checkbox" id="isPersonalGroup"
+                    onchange="toggleFriendSelection()">
+                  <label class="form-check-label fw-semibold" for="isPersonalGroup">
+                    <i class="bi bi-person-lock me-1"></i>Personal Group (Solo)
+                  </label>
+                  <div class="form-text">A private group for your own expenses. No other members can be added.</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6">
+                <label for="groupCurrency" class="form-label fw-semibold">
+                  <i class="bi bi-currency-exchange me-1"></i>Currency
+                </label>
+                <select class="form-select" id="groupCurrency" required>
+                  <option value="MAD">🇲🇦 MAD (Moroccan Dirham)</option>
+                  <option value="USD">🇺🇸 USD (US Dollar)</option>
+                  <option value="EUR">🇪🇺 EUR (Euro)</option>
+                  <option value="GBP">🇬🇧 GBP (British Pound)</option>
+                  <option value="CAD">🇨🇦 CAD (Canadian Dollar)</option>
+                  <option value="AED">🇦🇪 AED (UAE Dirham)</option>
+                  <option value="SAR">🇸🇦 SAR (Saudi Riyal)</option>
+                  <option value="EGP">🇪🇬 EGP (Egyptian Pound)</option>
+                  <option value="TND">🇹🇳 TND (Tunisian Dinar)</option>
+                  <option value="DZD">🇩🇿 DZD (Algerian Dinar)</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-calendar me-1"></i>Created Date
+                </label>
+                <input type="date" class="form-control" id="groupCreatedDate" readonly>
+              </div>
+            </div>
+
+            <!-- Members Selection -->
+            <div class="row mb-3">
+              <h6 class="text-primary mb-3">
+                <i class="bi bi-people me-1"></i>Invite Friends
+              </h6>
+              <div class="card border-0 bg-light">
+                <div class="card-body p-3">
+                  <div class="d-flex justify-content-between align-items-center mb-3">
+                    <span class="text-muted">Select friends to invite to this group</span>
+                    <div class="btn-group btn-group-sm" role="group">
+                      <button type="button" class="btn btn-outline-primary" onclick="selectAllFriends()">
+                        <i class="bi bi-check-all me-1"></i>Select All
+                      </button>
+                      <button type="button" class="btn btn-outline-secondary" onclick="deselectAllFriends()">
+                        <i class="bi bi-x-square me-1"></i>Clear All
+                      </button>
+                    </div>
+                  </div>
+
+
+                  <div id="friendsListtoCreateGroup" class="friends-grid">
+                    <div class="text-center text-muted py-3">
+                      <i class="bi bi-hourglass-split"></i> Loading friends...
+                    </div>
+
+
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-success" onclick="createGroup()">
+            <i class="bi bi-plus-circle me-1"></i>Create Group
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- =========================
+     EDIT GROUP MODAL
+========================= -->
+  <div class="modal fade" id="editGroupModal" tabindex="-1" aria-labelledby="editGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content rounded-3 shadow-lg border-0">
+        <div class="modal-header bg-gradient-warning text-dark">
+          <h5 class="modal-title fw-bold" id="editGroupModalLabel">
+            <i class="bi bi-pencil-square me-2"></i>Edit Group
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form id="editGroupForm">
+          <div class="modal-body p-4">
+            <input type="hidden" id="editGroupId" />
+            <input type="hidden" id="editGroupOriginalType" />
+
+            <!-- Basic Information -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-primary mb-3">
+                  <i class="bi bi-info-circle me-1"></i>Basic Information
+                </h6>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="editGroupTitle" class="form-label fw-semibold">
+                    <i class="bi bi-tag me-1"></i>Group Name
+                  </label>
+                  <input type="text" class="form-control form-control-lg" id="editGroupTitle"
+                    placeholder="e.g. Trip to Paris, House Expenses..." required>
+                  <div class="form-text">Choose a descriptive name for your group</div>
+                </div>
+              </div>
+              <div class="col-md-4" id="editGroupCategoryDiv">
+                <div class="mb-3">
+                  <label for="editGroupCategory" class="form-label fw-semibold">
+                    <i class="bi bi-grid me-1"></i>Category
+                  </label>
+                  <select class="form-select form-select-lg" id="editGroupCategory" required>
+                    <option value="Home">🏠 Home</option>
+                    <option value="Couple">💕 Couple</option>
+                    <option value="Trip">✈️ Trip</option>
+                    <option value="Work">💼 Work</option>
+                    <option value="Other">📝 Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="editGroupCurrency" class="form-label fw-semibold">
+                    <i class="bi bi-currency-exchange me-1"></i>Currency
+                  </label>
+                  <select class="form-select form-select-lg" id="editGroupCurrency" required>
+                    <option value="">-- Select Currency --</option>
+                    <option value="AED">🇦🇪 AED — United Arab Emirates (Dirham)</option>
+                    <option value="AFN">🇦🇫 AFN — Afghanistan (Afghani)</option>
+                    <option value="ALL">🇦🇱 ALL — Albania (Lek)</option>
+                    <option value="AMD">🇦🇲 AMD — Armenia (Dram)</option>
+                    <option value="ANG">🇳🇱 ANG — Netherlands Antilles (Guilder)</option>
+                    <option value="AOA">🇦🇴 AOA — Angola (Kwanza)</option>
+                    <option value="ARS">🇦🇷 ARS — Argentina (Peso)</option>
+                    <option value="AUD">🇦🇺 AUD — Australia (Dollar)</option>
+                    <option value="AWG">🇦🇼 AWG — Aruba (Guilder)</option>
+                    <option value="AZN">🇦🇿 AZN — Azerbaijan (Manat)</option>
+                    <option value="BAM">🇧🇦 BAM — Bosnia and Herzegovina (Marka)</option>
+                    <option value="BBD">🇧🇧 BBD — Barbados (Dollar)</option>
+                    <option value="BDT">🇧🇩 BDT — Bangladesh (Taka)</option>
+                    <option value="BGN">🇧🇬 BGN — Bulgaria (Lev)</option>
+                    <option value="BHD">🇧🇭 BHD — Bahrain (Dinar)</option>
+                    <option value="BIF">🇧🇮 BIF — Burundi (Franc)</option>
+                    <option value="BMD">🇧🇲 BMD — Bermuda (Dollar)</option>
+                    <option value="BND">🇧🇳 BND — Brunei (Dollar)</option>
+                    <option value="BOB">🇧🇴 BOB — Bolivia (Boliviano)</option>
+                    <option value="BRL">🇧🇷 BRL — Brazil (Real)</option>
+                    <option value="BSD">🇧🇸 BSD — Bahamas (Dollar)</option>
+                    <option value="BTN">🇧🇹 BTN — Bhutan (Ngultrum)</option>
+                    <option value="BWP">🇧🇼 BWP — Botswana (Pula)</option>
+                    <option value="BYN">🇧🇾 BYN — Belarus (Ruble)</option>
+                    <option value="BZD">🇧🇿 BZD — Belize (Dollar)</option>
+                    <option value="CAD">🇨🇦 CAD — Canada (Dollar)</option>
+                    <option value="CHF">🇨🇭 CHF — Switzerland (Franc)</option>
+                    <option value="CLP">🇨🇱 CLP — Chile (Peso)</option>
+                    <option value="CNY">🇨🇳 CNY — China (Yuan Renminbi)</option>
+                    <option value="COP">🇨🇴 COP — Colombia (Peso)</option>
+                    <option value="CRC">🇨🇷 CRC — Costa Rica (Colón)</option>
+                    <option value="CUP">🇨🇺 CUP — Cuba (Peso)</option>
+                    <option value="CZK">🇨🇿 CZK — Czech Republic (Koruna)</option>
+                    <option value="DJF">🇩🇯 DJF — Djibouti (Franc)</option>
+                    <option value="DKK">🇩🇰 DKK — Denmark (Krone)</option>
+                    <option value="DOP">🇩🇴 DOP — Dominican Republic (Peso)</option>
+                    <option value="DZD">🇩🇿 DZD — Algeria (Dinar)</option>
+                    <option value="EGP">🇪🇬 EGP — Egypt (Pound)</option>
+                    <option value="EUR">🇪🇺 EUR — European Union (Euro)</option>
+                    <option value="FJD">🇫🇯 FJD — Fiji (Dollar)</option>
+                    <option value="GBP">🇬🇧 GBP — United Kingdom (Pound Sterling)</option>
+                    <option value="GHS">🇬🇭 GHS — Ghana (Cedi)</option>
+                    <option value="GIP">🇬🇮 GIP — Gibraltar (Pound)</option>
+                    <option value="GMD">🇬🇲 GMD — Gambia (Dalasi)</option>
+                    <option value="GNF">🇬🇳 GNF — Guinea (Franc)</option>
+                    <option value="GTQ">🇬🇹 GTQ — Guatemala (Quetzal)</option>
+                    <option value="HKD">🇭🇰 HKD — Hong Kong (Dollar)</option>
+                    <option value="HNL">🇭🇳 HNL — Honduras (Lempira)</option>
+                    <option value="HRK">🇭🇷 HRK — Croatia (Kuna)</option>
+                    <option value="HTG">🇭🇹 HTG — Haiti (Gourde)</option>
+                    <option value="HUF">🇭🇺 HUF — Hungary (Forint)</option>
+                    <option value="IDR">🇮🇩 IDR — Indonesia (Rupiah)</option>
+                    <option value="ILS">🇮🇱 ILS — Israel (Shekel)</option>
+                    <option value="INR">🇮🇳 INR — India (Rupee)</option>
+                    <option value="IQD">🇮🇶 IQD — Iraq (Dinar)</option>
+                    <option value="IRR">🇮🇷 IRR — Iran (Rial)</option>
+                    <option value="ISK">🇮🇸 ISK — Iceland (Krona)</option>
+                    <option value="JMD">🇯🇲 JMD — Jamaica (Dollar)</option>
+                    <option value="JOD">🇯🇴 JOD — Jordan (Dinar)</option>
+                    <option value="JPY">🇯🇵 JPY — Japan (Yen)</option>
+                    <option value="KES">🇰🇪 KES — Kenya (Shilling)</option>
+                    <option value="KGS">🇰🇬 KGS — Kyrgyzstan (Som)</option>
+                    <option value="KHR">🇰🇭 KHR — Cambodia (Riel)</option>
+                    <option value="KPW">🇰🇵 KPW — North Korea (Won)</option>
+                    <option value="KRW">🇰🇷 KRW — South Korea (Won)</option>
+                    <option value="KWD">🇰🇼 KWD — Kuwait (Dinar)</option>
+                    <option value="KZT">🇰🇿 KZT — Kazakhstan (Tenge)</option>
+                    <option value="LAK">🇱🇦 LAK — Laos (Kip)</option>
+                    <option value="LBP">🇱🇧 LBP — Lebanon (Pound)</option>
+                    <option value="LKR">🇱🇰 LKR — Sri Lanka (Rupee)</option>
+                    <option value="LYD">🇱🇾 LYD — Libya (Dinar)</option>
+                    <option value="MAD">🇲🇦 MAD — Morocco (Dirham)</option>
+                    <option value="MDL">🇲🇩 MDL — Moldova (Leu)</option>
+                    <option value="MGA">🇲🇬 MGA — Madagascar (Ariary)</option>
+                    <option value="MKD">🇲🇰 MKD — North Macedonia (Denar)</option>
+                    <option value="MMK">🇲🇲 MMK — Myanmar (Kyat)</option>
+                    <option value="MNT">🇲🇳 MNT — Mongolia (Tugrik)</option>
+                    <option value="MOP">🇲🇴 MOP — Macau (Pataca)</option>
+                    <option value="MRO">🇲🇷 MRO — Mauritania (Ouguiya)</option>
+                    <option value="MUR">🇲🇺 MUR — Mauritius (Rupee)</option>
+                    <option value="MWK">🇲🇼 MWK — Malawi (Kwacha)</option>
+                    <option value="MXN">🇲🇽 MXN — Mexico (Peso)</option>
+                    <option value="MYR">🇲🇾 MYR — Malaysia (Ringgit)</option>
+                    <option value="MZN">🇲🇿 MZN — Mozambique (Metical)</option>
+                    <option value="NAD">🇳🇦 NAD — Namibia (Dollar)</option>
+                    <option value="NGN">🇳🇬 NGN — Nigeria (Naira)</option>
+                    <option value="NOK">🇳🇴 NOK — Norway (Krone)</option>
+                    <option value="NPR">🇳🇵 NPR — Nepal (Rupee)</option>
+                    <option value="NZD">🇳🇿 NZD — New Zealand (Dollar)</option>
+                    <option value="OMR">🇴🇲 OMR — Oman (Rial)</option>
+                    <option value="PEN">🇵🇪 PEN — Peru (Sol)</option>
+                    <option value="PHP">🇵🇭 PHP — Philippines (Peso)</option>
+                    <option value="PKR">🇵🇰 PKR — Pakistan (Rupee)</option>
+                    <option value="PLN">🇵🇱 PLN — Poland (Złoty)</option>
+                    <option value="QAR">🇶🇦 QAR — Qatar (Riyal)</option>
+                    <option value="RON">🇷🇴 RON — Romania (Leu)</option>
+                    <option value="RSD">🇷🇸 RSD — Serbia (Dinar)</option>
+                    <option value="RUB">🇷🇺 RUB — Russia (Ruble)</option>
+                    <option value="SAR">🇸🇦 SAR — Saudi Arabia (Riyal)</option>
+                    <option value="SDG">🇸🇩 SDG — Sudan (Pound)</option>
+                    <option value="SEK">🇸🇪 SEK — Sweden (Krona)</option>
+                    <option value="SGD">🇸🇬 SGD — Singapore (Dollar)</option>
+                    <option value="SYP">🇸🇾 SYP — Syria (Pound)</option>
+                    <option value="THB">🇹🇭 THB — Thailand (Baht)</option>
+                    <option value="TND">🇹🇳 TND — Tunisia (Dinar)</option>
+                    <option value="TRY">🇹🇷 TRY — Türkiye (Lira)</option>
+                    <option value="TWD">🇹🇼 TWD — Taiwan (Dollar)</option>
+                    <option value="TZS">🇹🇿 TZS — Tanzania (Shilling)</option>
+                    <option value="UAH">🇺🇦 UAH — Ukraine (Hryvnia)</option>
+                    <option value="UGX">🇺🇬 UGX — Uganda (Shilling)</option>
+                    <option value="USD">🇺🇸 USD — United States (Dollar)</option>
+                    <option value="UYU">🇺🇾 UYU — Uruguay (Peso)</option>
+                    <option value="UZS">🇺🇿 UZS — Uzbekistan (Som)</option>
+                    <option value="VEF">🇻🇪 VEF — Venezuela (Bolívar)</option>
+                    <option value="VND">🇻🇳 VND — Vietnam (Dong)</option>
+                    <option value="XAF">🌍 XAF — Central Africa (CFA Franc)</option>
+                    <option value="XOF">🌍 XOF — West Africa (CFA Franc)</option>
+                    <option value="YER">🇾🇪 YER — Yemen (Rial)</option>
+                    <option value="ZAR">🇿🇦 ZAR — South Africa (Rand)</option>
+                    <option value="ZMW">🇿🇲 ZMW — Zambia (Kwacha)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="editGroupPhoto" class="form-label fw-semibold">
+                    <i class="bi bi-image me-1"></i>Group Photo URL
+                  </label>
+                  <input type="url" class="form-control form-control-lg" id="editGroupPhoto"
+                    placeholder="https://example.com/photo.jpg">
+                  <div class="form-text">Optional: Add a photo URL for your group</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+              <h6 class="text-primary mb-3">
+                <i class="bi bi-chat-text me-1"></i>Description
+              </h6>
+              <div class="mb-3">
+                <label for="editGroupDescription" class="form-label fw-semibold">
+                  <i class="bi bi-card-text me-1"></i>Group Description
+                </label>
+                <textarea class="form-control form-control-lg" id="editGroupDescription" rows="3"
+                  placeholder="Describe your group..."></textarea>
+                <div class="form-text">Tell others what this group is about</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+            <button type="submit" class="btn btn-primary fw-bold">
+              <i class="bi bi-check-circle me-1"></i>Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!--  Unified Add Expense Modal -->
+  <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+      <div class="modal-content shadow-lg border-0">
+        <div class="modal-header bg-success text-white">
+          <h5 class="modal-title">
+            <i class="bi bi-receipt me-2"></i>Add New Expense
+          </h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body p-3 p-md-4">
+          <form id="addExpenseForm">
+            <!-- Step 1: Basic Info -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <h6 class="text-success mb-2 mb-md-3">
+                  <i class="bi bi-info-circle me-1"></i>Expense Details
+                </h6>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-calendar me-1"></i>Date
+                </label>
+                <input type="date" class="form-control" id="expenseDate" required>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-clock me-1"></i>Time
+                </label>
+                <input type="time" class="form-control" id="expenseTime" required>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-8 mb-3 mb-md-0">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-tag me-1"></i>Description
+                </label>
+                <input type="text" class="form-control" id="expenseDesc" placeholder="What was this expense for?"
+                  required>
+                <div class="form-text">Be specific about what you're splitting</div>
+              </div>
+              <div class="col-md-4">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-grid me-1"></i>Category
+                </label>
+                <select class="form-select" id="expenseCategory">
+                  <option value="Food">🍽️ Food & Dining</option>
+                  <option value="Transport">🚗 Transportation</option>
+                  <option value="Shopping">🛍️ Shopping</option>
+                  <option value="Entertainment">🎬 Entertainment</option>
+                  <option value="Travel">✈️ Travel</option>
+                  <option value="Utilities">⚡ Utilities</option>
+                  <option value="Billing">💳 Billing</option>
+                  <option value="Other">📝 Other</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Note -->
+            <div class="row mb-3">
+              <label class="form-label fw-semibold">Note</label>
+              <textarea type="text" class="form-control" id="expenseNote" rows="2"
+                placeholder="Add a note (optional)"></textarea>
+              <div class="form-text">Add an note </div>
+            </div>
+
+            <!-- Step 2: Amount & Payment -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <h6 class="text-success mb-2 mb-md-3">
+                  <i class="bi bi-cash-stack me-1"></i>Amount & Payment
+                </h6>
+              </div>
+            </div>
+
+            <div class="row mb-3">
+              <div class="col-md-6 mb-3 mb-md-0">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-cash-stack me-1"></i>Amount
+                </label>
+                <div class="input-group">
+                  <input type="number" step="0.01" class="form-control" id="expenseAmount" placeholder="0.00" min="0.01"
+                    required>
+                  <span class="input-group-text" id="currencyDisplay">MAD</span>
+                </div>
+                <div class="form-text">Total amount spent</div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-collection me-1"></i>Select Group
+                </label>
+                <select id="groupsListForExpenses" class="form-select" required>
+                  <option value="">-- Choose a group --</option>
+                </select>
+                <div class="form-text">Which group is this expense for?</div>
+              </div>
+            </div>
+
+            <!-- Step 3: Payer Selection -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <h6 class="text-primary mb-2 mb-md-3">
+                  <i class="bi bi-person-check me-1"></i>Who Paid?
+                </h6>
+              </div>
+            </div>
+            <div class="row mb-3">
+              <div class="col-12">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-person-fill me-1"></i>Payer <span class="text-danger">*</span>
+                </label>
+                <select class="form-select" id="expensePayer" required>
+                  <option value="">Select who paid...</option>
+                </select>
+                <div class="form-text">Who actually paid for this expense?</div>
+              </div>
+            </div>
+
+            <!-- Wallet section - only shows for current user -->
+            <div class="row mb-3" id="walletSection" style="display: none;">
+              <div class="col-12">
+                <label class="form-label fw-semibold">
+                  <i class="bi bi-wallet2 me-1"></i>Wallet <small class="text-muted">(Optional)</small>
+                </label>
+                <select class="form-select" id="expenseWallet">
+                  <option value="">No wallet selected</option>
+                </select>
+                <div class="form-text">Deduct from your wallet balance</div>
+              </div>
+            </div>
+
+            <!-- Step 4: Members Selection -->
+            <div class="row mb-3">
+              <div class="col-12">
+                <h6 class="text-success mb-2 mb-md-3">
+                  <i class="bi bi-people me-1"></i>Select Members
+                </h6>
+              </div>
+            </div>
+
+            <div class="card border-0 bg-light">
+              <div class="card-body p-3">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                  <span class="text-muted small">Who should split this expense?</span>
+                  <div class="btn-group btn-group-sm" role="group">
+                    <button type="button" class="btn btn-outline-success" onclick="selectAllMembers()">
+                      <i class="bi bi-check-all me-1"></i><span class="d-none d-sm-inline">Select All</span>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary" onclick="deselectAllMembers()">
+                      <i class="bi bi-x-square me-1"></i><span class="d-none d-sm-inline">Clear All</span>
+                    </button>
+                  </div>
+                </div>
+                <div id="membersListForGroups" class="border rounded p-3 bg-white"
+                  style="max-height: 200px; overflow-y: auto;">
+                  <div class="text-center text-muted py-3">
+                    <i class="bi bi-info-circle fs-1 mb-2"></i>
+                    <p class="mb-0">Select a group first to see members</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Expense Preview -->
+            <div class="card bg-success text-white mt-3" id="expensePreview" style="display: none;">
+              <div class="card-body">
+                <h6 class="card-title">
+                  <i class="bi bi-eye me-1"></i>Expense Preview
+                </h6>
+                <div class="row">
+                  <div class="col-6 col-md-3 mb-2">
+                    <small>Total Amount:</small>
+                    <div class="fw-bold" id="previewAmount">0.00 MAD</div>
+                  </div>
+                  <div class="col-6 col-md-3 mb-2">
+                    <small>Per Person:</small>
+                    <div class="fw-bold" id="previewPerPerson">0.00 MAD</div>
+                  </div>
+                  <div class="col-6 col-md-3 mb-2">
+                    <small>Members:</small>
+                    <div class="fw-bold" id="previewMemberCount">0</div>
+                  </div>
+                  <div class="col-6 col-md-3 mb-2">
+                    <small>Category:</small>
+                    <div class="fw-bold" id="previewCategory">-</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        <div class="modal-footer bg-light">
+          <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+            <i class="bi bi-x-circle me-1"></i>Cancel
+          </button>
+          <button type="button" class="btn btn-success" onclick="addExpenseModalSubmit()">
+            <i class="bi bi-check-circle me-1"></i>Add Expense
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+
+
+
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="js/group.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    if (!localStorage.getItem("token")) window.location.href = "login.html";
+
+
+  </script>
+
+</body>
+
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Balances & Settlements</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="navbar"></div>
+
+<main class="container py-4">
+  <h2 class="mb-3">Balances & Settle Up</h2>
+  <button class="btn btn-success mt-3" onclick="openSettleModal()">💰 Settle Up</button>
+
+
+  <h5>My Balances</h5>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>User</th>
+          <th>Owes</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="balancesBody">
+        <tr><td colspan="3" class="text-center">Loading balances...</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+  <h5 class="mt-4">Settlements</h5>
+  <div class="table-responsive">
+    <table class="table table-striped">
+      <thead>
+        <tr>
+          <th>From</th>
+          <th>To</th>
+          <th>Amount</th>
+        </tr>
+      </thead>
+      <tbody id="settleTableBody">
+        <tr><td colspan="3" class="text-center">Loading settlements...</td></tr>
+      </tbody>
+    </table>
+  </div>
+</main>
+
+<script src="js/config.js"></script>
+<script src="js/navbar.js"></script>
+<script src="js/balances.js"></script>
+<script src="js/settle.js"></script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>My Account - SplitEasy</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Bootstrap -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+    <link href="css/account.css" rel="stylesheet">
+</head>
+
+<body>
+    <!-- ✅ Navbar -->
+    <div id="navbar" class="d-none d-md-block"></div>
+    <!-- ✅ Mobile Navbar -->
+    <div id="navbarMobile" class="d-md-none"></div>
+
+    <!-- Main Content -->
+    <div class="container my-4">
+        <!-- Welcome Banner -->
+        <div class="welcome-banner text-center mb-4">
+            <div class="profile-avatar-large mb-3">
+                <img id="profilePhoto" src="https://ui-avatars.com/api/?name=User&background=random&color=fff&size=120"
+                    class="profile-avatar-img" alt="Profile">
+            </div>
+            <h1 class="fw-bold mb-2" id="profileName">Loading...</h1>
+            <p class="lead mb-3" id="profileEmail">email@example.com</p>
+            <p class="mb-4" id="profilePhone">+212 600 000 000</p>
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <button class="btn btn-light" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                    <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                </button>
+                <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#changePasswordModal">
+                    <i class="bi bi-key me-2"></i>Change Password
+                </button>
+                <button class="btn btn-outline-light" data-bs-toggle="modal" data-bs-target="#activityModal">
+                    <i class="bi bi-clock-history me-2"></i>View Activity
+                </button>
+                <a href="finance.html" class="btn btn-outline-light">
+                    <i class="bi bi-wallet2 me-2"></i>Income & Wallets
+                </a>
+            </div>
+        </div>
+
+        <!-- Profile Information & Recent Activity -->
+        <div class="row mb-4">
+            <!-- Profile Information Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="bi bi-info-circle me-2 text-primary"></i>Profile Information
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="profile-info-item mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-person-badge me-2 text-primary"></i>
+                                <span class="fw-semibold">Full Name:</span>
+                            </div>
+                            <p class="text-muted mb-0 ms-4" id="profileFullName">-</p>
+                        </div>
+                        <div class="profile-info-item mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-envelope me-2 text-primary"></i>
+                                <span class="fw-semibold">Email:</span>
+                            </div>
+                            <p class="text-muted mb-0 ms-4" id="profileEmailInfo">-</p>
+                        </div>
+                        <div class="profile-info-item mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-telephone me-2 text-primary"></i>
+                                <span class="fw-semibold">Phone:</span>
+                            </div>
+                            <p class="text-muted mb-0 ms-4" id="profilePhoneInfo">-</p>
+                        </div>
+                        <div class="profile-info-item mb-3">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-gender-ambiguous me-2 text-primary"></i>
+                                <span class="fw-semibold">Gender:</span>
+                            </div>
+                            <p class="text-muted mb-0 ms-4" id="profileGender">-</p>
+                        </div>
+                        <div class="profile-info-item">
+                            <div class="d-flex align-items-center mb-2">
+                                <i class="bi bi-calendar me-2 text-primary"></i>
+                                <span class="fw-semibold">Member Since:</span>
+                            </div>
+                            <p class="text-muted mb-0 ms-4" id="profileCreatedAt">-</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Card -->
+            <div class="col-md-6 mb-4">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-header bg-light">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0 fw-bold">
+                                <i class="bi bi-clock-history me-2 text-primary"></i>Recent Activity
+                            </h5>
+                            <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal"
+                                data-bs-target="#activityModal">
+                                <i class="bi bi-eye me-1"></i>View All
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-0">
+                        <div id="activityPreview" class="p-3">
+                            <div class="text-center text-muted py-4">
+                                <div class="spinner-border text-primary" role="status"></div>
+                                <p class="text-muted mt-2 mb-0">Loading recent activity...</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm border-0">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0 fw-bold">
+                            <i class="bi bi-lightning-charge me-2 text-primary"></i>Quick Actions
+                        </h5>
+                    </div>
+                    <div class="card-body p-4">
+                        <div class="row g-3">
+                            <div class="col-md-3 col-6">
+                                <a href="groups.html"
+                                    class="action-card card h-100 p-3 text-center text-decoration-none">
+                                    <i class="bi bi-people-fill fs-1 text-primary mb-2"></i>
+                                    <h6 class="fw-bold mb-0">My Groups</h6>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="friends.html"
+                                    class="action-card card h-100 p-3 text-center text-decoration-none">
+                                    <i class="bi bi-heart-fill fs-1 text-success mb-2"></i>
+                                    <h6 class="fw-bold mb-0">My Friends</h6>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <a href="finance.html"
+                                    class="action-card card h-100 p-3 text-center text-decoration-none">
+                                    <i class="bi bi-wallet2 fs-1 text-info mb-2"></i>
+                                    <h6 class="fw-bold mb-0">Wallets</h6>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-6">
+                                <button class="action-card card h-100 p-3 text-center border-0 w-100"
+                                    id="logoutBtnAccount" style="background: white; cursor: pointer;">
+                                    <i class="bi bi-box-arrow-right fs-1 text-danger mb-2"></i>
+                                    <h6 class="fw-bold mb-0">Logout</h6>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Profile Modal -->
+    <div class="modal fade" id="editProfileModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Profile
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="modalAccountForm">
+                        <!-- Profile Photo Section -->
+                        <div class="text-center mb-4">
+                            <img id="modalPhotoPreview"
+                                src="https://ui-avatars.com/api/?name=User&background=random&color=fff&size=100"
+                                class="rounded-circle border border-3 border-primary mb-3" width="100" height="100"
+                                alt="Profile Preview">
+                            <div>
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-image me-1"></i>Profile Photo URL
+                                </label>
+                                <input type="url" id="modal_profile_photo" class="form-control"
+                                    placeholder="https://example.com/photo.jpg">
+                                <div class="form-text">Enter a valid image URL</div>
+                            </div>
+                        </div>
+
+                        <!-- Basic Information -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-info-circle me-1"></i>Basic Information
+                                </h6>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-person me-1"></i>Username *
+                                </label>
+                                <input type="text" id="modal_username" class="form-control" required>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-envelope me-1"></i>Email *
+                                </label>
+                                <input type="email" id="modal_email" class="form-control" required>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-person-badge me-1"></i>First Name
+                                </label>
+                                <input type="text" id="modal_first_name" class="form-control">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-person-badge me-1"></i>Last Name
+                                </label>
+                                <input type="text" id="modal_last_name" class="form-control">
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="bi bi-gear me-1"></i>Additional Information
+                                </h6>
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-gender-ambiguous me-1"></i>Gender
+                                </label>
+                                <select id="modal_gender" class="form-select">
+                                    <option value="">Select Gender</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label fw-semibold">
+                                    <i class="bi bi-telephone me-1"></i>Phone
+                                </label>
+                                <input type="tel" id="modal_phone" class="form-control" placeholder="+212 600 000 000">
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-flex justify-content-between mt-4">
+                            <button type="button" class="btn btn-outline-danger" id="modalDeleteBtn">
+                                <i class="bi bi-trash me-1"></i>Delete Account
+                            </button>
+                            <div>
+                                <button type="button" class="btn btn-outline-secondary me-2" data-bs-dismiss="modal">
+                                    <i class="bi bi-x-circle me-1"></i>Cancel
+                                </button>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-save me-1"></i>Save Changes
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Change Password Modal -->
+    <div class="modal fade" id="changePasswordModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-key me-2"></i>Change Password
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <form id="changePasswordForm">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-lock me-1"></i>Current Password *
+                            </label>
+                            <input type="password" id="old_password" class="form-control" required
+                                placeholder="Enter your current password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-key me-1"></i>New Password *
+                            </label>
+                            <input type="password" id="new_password" class="form-control" required
+                                placeholder="Enter new password (min 6 characters)" minlength="6">
+                            <div class="form-text">Password must be at least 6 characters long</div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">
+                                <i class="bi bi-key-fill me-1"></i>Confirm New Password *
+                            </label>
+                            <input type="password" id="confirm_password" class="form-control" required
+                                placeholder="Confirm new password" minlength="6">
+                        </div>
+                        <div class="d-flex justify-content-end gap-2 mt-4">
+                            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                                <i class="bi bi-x-circle me-1"></i>Cancel
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-1"></i>Change Password
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Activity Modal -->
+    <div class="modal fade" id="activityModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-scrollable">
+            <div class="modal-content shadow-lg border-0">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-clock-history me-2"></i>Recent Activity
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4">
+                    <div id="activityModalContent">
+                        <div class="text-center text-muted py-4">
+                            <div class="spinner-border text-primary" role="status"></div>
+                            <p class="text-muted mt-2 mb-0">Loading activity...</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer bg-light">
+                    <button type="button" class="btn btn-outline-primary" data-bs-dismiss="modal">
+                        <i class="bi bi-x-circle me-1"></i>Close
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Container -->
+    <div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>
+
+    <!-- Bootstrap + JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/config.js"></script>
+    <script src="js/notifications.js"></script>
+    <script src="js/navbar.js"></script>
+    <script src="js/account.js"></script>
+    <script>
+        if (!localStorage.getItem("token")) window.location.href = "login.html";
+    </script>
+</body>
+
+</html>

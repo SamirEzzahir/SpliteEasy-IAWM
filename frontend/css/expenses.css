@@ -1,0 +1,481 @@
+    /* Enhanced Expense Page Styles */
+    :root {
+        --primary-color: #0d6efd;
+        --success-color: #198754;
+        --danger-color: #dc3545;
+        --warning-color: #ffc107;
+        --info-color: #0dcaf0;
+        --light-color: #f8f9fa;
+        --dark-color: #212529;
+    }
+
+    body {
+        background-color: #f8f9fa;
+        margin-bottom: 8rem !important;
+    }
+
+    .container {
+        max-width: 1200px;
+    }
+
+    /* Loading States */
+    .loading-placeholder {
+        background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+        background-size: 200% 100%;
+        animation: loading 1.5s infinite;
+        border-radius: 4px;
+        color: transparent;
+    }
+
+    @keyframes loading {
+        0% {
+            background-position: 200% 0;
+        }
+
+        100% {
+            background-position: -200% 0;
+        }
+    }
+
+    /* Card Enhancements */
+    .card {
+        border-radius: 12px;
+        transition: all 0.3s ease;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    }
+
+    /* Button Enhancements */
+    .btn {
+        border-radius: 8px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+
+    .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+
+
+
+    .btn:active {
+        transform: translateY(0);
+    }
+
+    /* Table Enhancements */
+    .table {
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .table th {
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        border-bottom: 2px solid #dee2e6;
+    }
+
+    .table td {
+        vertical-align: middle;
+        padding: 1rem 0.75rem;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(13, 110, 253, 0.05);
+        transform: scale(1.01);
+    }
+
+    /* Mobile Card Styles */
+    .expense-card {
+        border-radius: 12px;
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        margin-bottom: 1rem;
+    }
+
+    .expense-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+        border-color: var(--primary-color);
+    }
+
+    /* Status Badges */
+    .status-badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.8em;
+        border-radius: 20px;
+        font-weight: 600;
+    }
+
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+        .container {
+            padding: 0 1rem;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .btn-group {
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .btn-group .btn {
+            border-radius: 8px !important;
+            margin-bottom: 0.25rem;
+        }
+
+        .table-responsive {
+            border-radius: 8px;
+        }
+    }
+
+    /* Animation Classes */
+    .fade-in {
+        animation: fadeIn 0.5s ease-in;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(20px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    .slide-in {
+        animation: slideIn 0.3s ease-out;
+    }
+
+    @keyframes slideIn {
+        from {
+            transform: translateX(-100%);
+        }
+
+        to {
+            transform: translateX(0);
+        }
+    }
+
+    /* Focus States for Accessibility */
+    .btn:focus,
+    .form-control:focus,
+    .form-select:focus {
+        box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+        border-color: var(--primary-color);
+    }
+
+    /* Custom Scrollbar */
+    ::-webkit-scrollbar {
+        width: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 4px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+        background: #a8a8a8;
+    }
+
+    /* Mobile-specific styles for minimal cards */
+    .expense-item {
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+        border-radius: 0;
+        margin-bottom: 0;
+        box-shadow: none;
+        border: none;
+    }
+
+    .expense-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .expense-item:last-child {
+        border-bottom: none;
+    }
+
+    @media (max-width: 991px) {
+
+        /* Remove Bootstrap card styling for mobile */
+        .mobile-cards .card {
+            border: none;
+            box-shadow: none;
+            margin-bottom: 0;
+        }
+
+        .mobile-cards .card-body {
+            padding: 0;
+        }
+    }
+
+    /* Make buttons slightly bigger on mobile */
+    @media (max-width: 576px) {
+        .btn-sm {
+            font-size: 0.95rem;
+            padding: 0.5rem 0.8rem;
+            flex: 1 0 auto;
+            /* allow buttons to expand */
+            white-space: nowrap;
+        }
+
+        .overflow-auto {
+            -webkit-overflow-scrolling: touch;
+            /* smooth scroll on iOS */
+        }
+    }
+
+    .btn i {
+        font-size: 1rem;
+    }
+
+
+    /* Friends Grid Styles */
+    .friends-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+        gap: 12px;
+        padding: 16px;
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        border: 2px solid #e9ecef;
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .friend-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        background-color: #ffffff;
+        border-radius: 16px;
+        padding: 1rem;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.3s ease-in-out;
+        border: 2px solid transparent;
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .friend-card:hover {
+
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: rgba(0, 0, 0, 0.15) 0px 4px 12px;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+
+    }
+
+    .friend-card.selected {
+        background-color: #e9f2ff;
+        transform: translateY(-3px) scale(1.03);
+        box-shadow: 0 4px 16px rgba(13, 110, 253, 0.25);
+    }
+
+    .friend-card.selected::before {
+        content: "✓";
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.9);
+        color: #28a745;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        font-size: 12px;
+    }
+
+    .friend-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        margin: 0 auto 8px;
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-weight: bold;
+        font-size: 16px;
+    }
+
+    .friend-card.selected .friend-avatar {
+        background: linear-gradient(135deg, #4caf50 0%, #4a9f4f 100%);
+        border-color: #4caf50;
+    }
+
+
+
+
+    .friend-name {
+        font-size: 12px;
+        font-weight: 600;
+        margin: 0;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+
+
+    .member-card input[type="checkbox"]:checked+.avatar {
+        background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
+        border-color: #4caf50;
+    }
+
+    /* 🟦 Avatar style */
+    .member-card .avatar {
+        width: 58px;
+        height: 58px;
+        background: linear-gradient(135deg, #0d6efd, #66a6ff);
+        color: #fff;
+        font-weight: 600;
+        font-size: 1.2rem;
+        box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        margin-right: 0.75rem;
+        text-transform: uppercase;
+    }
+
+
+
+
+    /* Member Cards Styles */
+    .member-card {
+        background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 12px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e9ecef;
+        transition: all 0.3s ease;
+        position: relative;
+    }
+
+    .member-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+        border-color: #007bff;
+        background: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+    }
+
+
+
+    .member-card.admin {
+        border-left: 4px solid #ffc107;
+        background: linear-gradient(135deg, #fff9e6 0%, #ffffff 100%);
+    }
+
+    .member-card.admin::before {
+        content: "👑";
+        position: absolute;
+        top: 12px;
+        right: 12px;
+        font-size: 16px;
+    }
+
+
+
+    .member-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+
+    .member-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .member-name {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 0 0 4px 0;
+        color: #333;
+    }
+
+    .member-role {
+        font-size: 12px;
+        color: #6c757d;
+        margin: 0;
+    }
+
+    .member-actions {
+        display: flex;
+        gap: 8px;
+        margin-top: 12px;
+    }
+
+    .member-actions .btn {
+        flex: 1;
+        font-size: 12px;
+        padding: 6px 12px;
+        border-radius: 8px;
+    }
+
+    /* Mobile Responsive */
+    @media (max-width: 768px) {
+        .friends-grid {
+            grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+            gap: 8px;
+            padding: 12px;
+        }
+
+        .friend-card {
+            padding: 8px;
+        }
+
+        .friend-avatar {
+            width: 35px;
+            height: 35px;
+            font-size: 14px;
+        }
+
+        .friend-name {
+            font-size: 11px;
+        }
+
+        .member-card {
+            padding: 12px;
+        }
+
+        .member-avatar {
+            width: 40px;
+            height: 40px;
+            font-size: 16px;
+        }
+
+        .member-name {
+            font-size: 14px;
+        }
+    }

@@ -1,0 +1,853 @@
+<!doctype html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Expenses</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
+  <link href="css/expenses.css" rel="stylesheet">
+
+</head>
+
+<body>
+  <!-- Navbar -->
+  <div id="navbar" class="d-none d-md-block"></div>
+  <div id="navbarMobile" class="d-md-none"></div>
+
+  <div class="container my-4">
+    <!-- Group Header -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-center">
+              <div>
+                <div class="d-flex align-items-center mb-1">
+                  <h2 class="mb-0" id="groupTitle">
+                    <i class="bi bi-people-fill text-primary me-2"></i>
+                    <span class="loading-placeholder">Loading...</span>
+                  </h2>
+                  <button class="btn btn-outline-primary btn-sm ms-3" id="editGroupBtn" title="Edit Group">
+                    <i class="bi bi-pencil"></i>
+                  </button>
+                </div>
+                <p class="text-muted mb-0" id="groupDescription">
+                  <span class="loading-placeholder">Loading group details...</span>
+                </p>
+              </div>
+              <div class="text-end">
+                <div class="badge bg-success fs-6 mb-2" id="groupStatus">
+                  <i class="bi bi-check-circle me-1"></i>Active
+                </div>
+                <div class="text-muted small" id="memberCount">
+                  <i class="bi bi-person me-1"></i><span class="loading-placeholder">Loading...</span> members
+                </div>
+                <div class="text-muted small" id="groupCurrency">
+                  <i class="bi bi-currency-exchange me-1"></i><span class="loading-placeholder">Loading...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- ✅ Group Expenses Section -->
+    <div class="container my-5">
+      <div class="card shadow-lg p-4">
+        <h2 class="mb-4 text-center">Group Expenses</h2>
+
+        <!-- Actions -->
+        <div class="d-flex flex-wrap gap-2 mb-3 justify-content-center">
+          <button class="btn btn-primary" id="downloadTemplateBtn">
+            <i class="bi bi-download"></i> Download Template
+          </button>
+          <label class="btn btn-success mb-0">
+            <i class="bi bi-upload"></i> Upload Excel
+            <input type="file" id="uploadFile" accept=".xlsx,.xls" hidden>
+          </label>
+          <button class="btn btn-info text-white" id="downloadExpensesBtn">
+            <i class="bi bi-file-earmark-arrow-down"></i> Download Current
+          </button>
+        </div>
+        <div id="uploadStatus" class="text-center mb-3"></div>
+
+        <div id="message" class="alert alert-info d-none"></div>
+      </div>
+    </div>
+
+    <!-- Action Toolbar -->
+    <div class="row mb-4">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-body py-3">
+            <div class="d-flex flex-wrap gap-2 justify-content-center justify-content-md-start">
+              <button class="btn btn-primary d-flex align-items-center" data-bs-toggle="modal"
+                data-bs-target="#addExpenseModal" aria-label="Add new expense">
+                <i class="bi bi-plus-circle me-2"></i>
+                <span class="d-none d-sm-inline">Add Expense</span>
+                <span class="d-sm-none">Add</span>
+              </button>
+
+              <button class="btn btn-outline-primary d-flex align-items-center" id="friendsAddMemberbtn"
+                data-bs-toggle="modal" data-bs-target="#manageMembersModal" aria-label="Manage group members">
+                <i class="bi bi-people me-2"></i>
+                <span class="d-none d-sm-inline">Manage Members</span>
+                <span class="d-sm-none">Members</span>
+              </button>
+
+              <button class="btn btn-outline-info d-flex align-items-center" id="balanceId"
+                aria-label="View group balances">
+                <i class="bi bi-wallet2 me-2"></i>
+                <span class="d-none d-sm-inline">View Balances</span>
+                <span class="d-sm-none">Balances</span>
+              </button>
+
+              <button id="leaveGroupBtn" class="btn btn-outline-danger d-flex align-items-center"
+                aria-label="Leave this group">
+                <i class="bi bi-box-arrow-right me-2"></i>
+                <span class="d-none d-sm-inline">Leave Group</span>
+                <span class="d-sm-none">Leave</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+
+
+    <!-- All Settled Message -->
+    <div id="allSettledMessage" class="my-4 d-none">
+      <div class="card text-center shadow-sm border-success">
+        <div class="card-body p-4">
+          <div class="mb-3">
+            <i class="bi bi-check-circle-fill text-success" style="font-size: 3rem;"></i>
+          </div>
+          <h4 class="mb-2 text-success">🎉 All Settled Up!</h4>
+          <p class="text-muted mb-3">Everyone's balances are zero. No outstanding debts.</p>
+          <button class="btn btn-outline-success" id="showExpensesBtn">
+            <i class="bi bi-eye me-2"></i>Show All Expenses
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Expenses Section -->
+    <div class="row">
+      <div class="col-12">
+        <div class="card border-0 shadow-sm">
+          <div class="card-header bg-white border-bottom">
+            <div class="d-flex justify-content-between align-items-center">
+              <h5 class="mb-0">
+                <i class="bi bi-receipt me-2"></i>Recent Expenses
+              </h5>
+              <div class="d-flex gap-2">
+                <button class="btn btn-sm btn-outline-secondary" id="refreshExpenses" aria-label="Refresh expenses">
+                  <i class="bi bi-arrow-clockwise"></i>
+                </button>
+                <div class="dropdown">
+                  <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button"
+                    data-bs-toggle="dropdown" aria-label="Filter expenses">
+                    <i class="bi bi-funnel"></i>
+                  </button>
+                  <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="#" data-filter="all">All Expenses</a></li>
+                    <li><a class="dropdown-item" href="#" data-filter="my">My Expenses</a></li>
+                    <li><a class="dropdown-item" href="#" data-filter="recent">Recent (7 days)</a></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Desktop Table -->
+          <div id="desktopTable" class="d-none d-lg-block">
+            <div class="table-responsive">
+              <table class="table table-hover mb-0" aria-label="Expenses table">
+                <thead class="table-light">
+                  <tr>
+                    <th scope="col"><i class="bi bi-tag me-1"></i>Description</th>
+                    <th scope="col"><i class="bi bi-currency-dollar me-1"></i>Amount</th>
+                    <th scope="col"><i class="bi bi-person me-1"></i>Payer</th>
+                    <th scope="col"><i class="bi bi-share me-1"></i>Your Share</th>
+                    <th scope="col"><i class="bi bi-wallet me-1"></i>Wallet</th>
+                    <th scope="col"><i class="bi bi-calendar me-1"></i>Date</th>
+                    <th scope="col"><i class="bi bi-gear me-1"></i>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="expensesTable">
+                  <tr>
+                    <td colspan="7" class="text-center text-muted py-4">
+                      <div class="d-flex align-items-center justify-content-center">
+                        <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                        Loading expenses...
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          <!-- Mobile Cards -->
+          <div id="expensesList" class="d-block d-lg-none p-3">
+            <div class="text-center text-muted py-4">
+              <div class="d-flex align-items-center justify-content-center">
+                <div class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></div>
+                Loading expenses...
+              </div>
+            </div>
+          </div>
+
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Expense Modal -->
+  <div class="modal fade" id="addExpenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+
+        <!-- Header -->
+        <div class="modal-header border-0 pb-0">
+          <h5 class="modal-title fw-bold fs-5 text-dark">Add New Expense</h5>
+          <button type="button" class="btn-close bg-light rounded-circle p-2" data-bs-dismiss="modal"
+            aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-4">
+          <form id="addExpenseForm">
+
+            <!-- Description -->
+            <div class="mb-3">
+              <label class="form-label fw-semibold text-secondary small">Description</label>
+              <input type="text" class="form-control fs-6" id="addDescription"
+                placeholder="e.g., Dinner at The Italian Place" required>
+            </div>
+
+            <!-- Category & Amount Row -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary small">Category</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0"><i class="bi bi-tag text-muted"></i></span>
+                  <select class="form-select fs-6 border-start-0 ps-0" id="addCategory" required>
+                    <option value="Food">🍽️ Food & Dining</option>
+                    <option value="Transport">🚗 Transportation</option>
+                    <option value="Shopping">🛍️ Shopping</option>
+                    <option value="Entertainment">🎬 Entertainment</option>
+                    <option value="Travel">✈️ Travel</option>
+                    <option value="Utilities">⚡ Utilities</option>
+                    <option value="Billing">💳 Billing</option>
+                    <option value="Other">📝 Other</option>
+                  </select>
+                </div>
+
+
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary small">Amount</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-white border-end-0 text-muted" id="addCurrencySymbol">MAD</span>
+                  <input type="number" class="form-control fs-6 border-start-0 ps-1" id="addAmount" placeholder="0.00"
+                    step="0.01" min="0.01" required>
+                </div>
+              </div>
+            </div>
+
+
+
+            <!-- Paid By & Wallet Row -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6" id="addPayerContainer">
+                <label class="form-label fw-semibold text-secondary small">Paid by</label>
+                <select class="form-select fs-6" id="addPayer" required>
+                  <!-- Populated by JS -->
+                </select>
+              </div>
+              <div class="col-md-6" id="addWalletContainer">
+                <label class="form-label fw-semibold text-secondary small">From Wallet</label>
+                <select class="form-select fs-6" id="addWallet">
+                  <option value="">Wallet</option>
+                  <!-- Populated by JS -->
+                </select>
+              </div>
+            </div>
+            <!-- Note (Moved Above Split) -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-secondary small">Note (Optional)</label>
+              <textarea class="form-control rounded-3 fs-6" id="addNote" rows="2"
+                placeholder="Add any extra details..."></textarea>
+            </div>
+            <!-- Date & Time Row -->
+            <div class="row g-3 mb-3">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary small">Date</label>
+                <div class="input-group">
+                  <input type="date" class="form-control fs-6 border-end-0" id="addDate" required>
+
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-secondary small">Time</label>
+                <div class="input-group">
+                  <input type="time" class="form-control fs-6 border-end-0" id="addTime" required>
+
+                </div>
+              </div>
+            </div>
+
+
+
+            <!-- Split Section -->
+            <div class="mb-4" id="addSplitSection">
+              <label class="form-label fw-semibold text-secondary small mb-2">Split Between</label>
+
+              <!-- Segmented Control -->
+              <div class="bg-light p-1 rounded-3 d-flex mb-3" role="group">
+                <input type="radio" class="btn-check" name="addSplitType" id="addSplitEqual" value="equal" checked>
+                <label class="btn btn-sm border-0 flex-grow-1 rounded-3 py-2 fw-semibold shadow-sm bg-white text-dark"
+                  for="addSplitEqual" id="labelAddSplitEqual">Equally</label>
+
+                <input type="radio" class="btn-check" name="addSplitType" id="addSplitPercentage" value="percentage">
+                <label class="btn btn-sm border-0 flex-grow-1 rounded-3 py-2 fw-semibold text-muted"
+                  for="addSplitPercentage" id="labelAddSplitPercentage">By Percentage</label>
+
+                <input type="radio" class="btn-check" name="addSplitType" id="addSplitCustom" value="custom">
+                <label class="btn btn-sm border-0 flex-grow-1 rounded-3 py-2 fw-semibold text-muted"
+                  for="addSplitCustom" id="labelAddSplitCustom">Custom</label>
+              </div>
+
+              <!-- Validation Alert -->
+              <div id="addSplitValidationAlert"
+                class="alert alert-danger py-2 px-3 mb-3 small rounded-3 border-0 bg-danger-subtle text-danger"
+                style="display: none;">
+                <!-- Dynamic message -->
+              </div>
+
+              <!-- Equal Split View -->
+              <div id="addEqualSplitView" class="d-flex flex-column gap-2">
+                <div class="d-flex justify-content-between mb-2">
+                  <button type="button" class="btn btn-link p-0 text-decoration-none small fw-semibold"
+                    onclick="selectAllAddMembers()">Select All</button>
+                  <button type="button" class="btn btn-link p-0 text-decoration-none small fw-semibold text-muted"
+                    onclick="deselectAllAddMembers()">Deselect All</button>
+                </div>
+                <div id="addEqualSplitMembers" class="d-flex flex-column gap-2">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- Percentage Split View -->
+              <div id="addPercentageSplitView" class="d-none flex-column gap-2">
+                <div id="addPercentageSplitMembers" class="d-flex flex-column gap-2">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+
+              <!-- Custom Split View -->
+              <div id="addCustomSplitView" class="d-none flex-column gap-2">
+                <div id="addCustomSplitMembers" class="d-flex flex-column gap-2">
+                  <!-- Populated by JS -->
+                </div>
+              </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="d-flex justify-content-end gap-2 pt-2">
+              <button type="button" class="btn btn-light px-4 fw-semibold" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-primary px-4 fw-semibold" onclick="submitAddExpense()">Add
+                Expense</button>
+            </div>
+
+
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer bg-light">
+      <button class="btn btn-secondary" data-bs-dismiss="modal">
+        <i class="bi bi-x-circle"></i> Close
+      </button>
+    </div>
+  </div>
+  </div>
+  </div>
+
+  <!-- Manage Members Modal (Redesigned) -->
+  <div class="modal fade" id="manageMembersModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered modal-dialog-scrollable">
+      <div class="modal-content border-0 shadow-lg rounded-4 overflow-hidden">
+
+        <!-- Header -->
+        <div class="modal-header border-bottom px-4 py-3 bg-white">
+          <div class="d-flex flex-column">
+            <h4 class="modal-title fw-bold text-dark mb-0">Manage Members</h4>
+            <p class="text-muted small mb-0" id="manageMembersGroupTitle">Group Name</p>
+          </div>
+          <button type="button" class="btn-close bg-light rounded-circle p-2" data-bs-dismiss="modal"
+            aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body p-0">
+          <div class="row g-0 h-100">
+
+            <!-- Left Panel: Add New Members -->
+            <div class="col-lg-6 p-4 border-end bg-light">
+              <h5 class="fw-bold text-dark mb-4">Add New Members</h5>
+
+              <!-- Search Bar -->
+              <div class="mb-4">
+                <div class="input-group input-group-lg bg-white rounded-3 border shadow-sm">
+                  <span class="input-group-text bg-transparent border-0 ps-3"><i
+                      class="bi bi-search text-muted"></i></span>
+                  <input type="text" class="form-control border-0 bg-transparent fs-6" id="searchFriendsInput"
+                    placeholder="Search friends...">
+                </div>
+              </div>
+
+              <!-- Friends List -->
+              <div id="friendsListContainer" class="d-flex flex-column gap-2 mb-4 overflow-auto"
+                style="max-height: 400px;">
+                <!-- Populated by JS -->
+                <div class="text-center text-muted py-4">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                  <span class="ms-2">Loading friends...</span>
+                </div>
+              </div>
+
+              <!-- Bottom Actions -->
+              <div class="mt-auto pt-3 border-top">
+                <!-- Make Admin Toggle -->
+                <div
+                  class="d-flex align-items-center justify-content-between p-3 bg-white rounded-3 border mb-3 shadow-sm">
+                  <div>
+                    <p class="fw-bold text-dark mb-0">Make Admin</p>
+                    <p class="text-muted small mb-0">Assign admin rights to new members.</p>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input fs-4" type="checkbox" id="makeAdminToggle">
+                  </div>
+                </div>
+
+                <!-- Add Button -->
+                <button type="button" class="btn btn-primary w-100 py-3 fw-bold shadow-sm" id="addMembersBtn" disabled>
+                  Add Members
+                </button>
+              </div>
+            </div>
+
+            <!-- Right Panel: Current Members -->
+            <div class="col-lg-6 p-4 bg-white">
+              <h5 class="fw-bold text-dark mb-4" id="currentMembersTitle">Current Members</h5>
+
+              <div id="currentMembersList" class="d-flex flex-column gap-2 overflow-auto" style="max-height: 600px;">
+                <!-- Populated by JS -->
+                <div class="text-center text-muted py-4">
+                  <div class="spinner-border spinner-border-sm text-primary" role="status"></div>
+                  <span class="ms-2">Loading members...</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Expense Modal (Redesigned) -->
+  <div class="modal fade" id="editExpenseModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-lg">
+      <div class="modal-content border-0 shadow-lg rounded-4">
+        <!-- Header -->
+        <div class="modal-header border-bottom-0 px-4 pt-4 pb-2">
+          <div>
+            <h4 class="modal-title fw-bold text-dark">Edit Expense</h4>
+            <p class="text-muted small mb-0">Modify the details of your shared expense below.</p>
+          </div>
+          <button type="button" class="btn-close bg-light rounded-circle p-2" data-bs-dismiss="modal"
+            aria-label="Close"></button>
+        </div>
+
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" id="editExpenseId">
+          <form id="editExpenseForm">
+            <!-- Description -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark">Description</label>
+              <input type="text" class="form-control form-control-lg bg-light border-0 fs-6" id="editDescription"
+                placeholder="e.g. Dinner at The Italian Place" required>
+            </div>
+
+            <!-- Amount & Date -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Amount</label>
+                <div class="input-group">
+                  <span class="input-group-text bg-light border-0 text-muted ps-3" id="editCurrencySymbol">MAD</span>
+                  <input type="number" class="form-control form-control-lg bg-light border-0 fs-6 fw-bold"
+                    id="editAmount" placeholder="0.00" step="0.01" min="0" required>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Date</label>
+                <input type="date" class="form-control form-control-lg bg-light border-0 fs-6 text-muted" id="editDate"
+                  required>
+              </div>
+            </div>
+
+            <!-- Category & Wallet -->
+            <div class="row g-3 mb-4">
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Category</label>
+                <select class="form-select form-select-lg bg-light border-0 fs-6 text-muted" id="editCategory">
+                  <option value="">Select category</option>
+                  <option value="Food">🍽️ Food & Dining</option>
+                  <option value="Transport">🚗 Transportation</option>
+                  <option value="Shopping">🛍️ Shopping</option>
+                  <option value="Entertainment">🎬 Entertainment</option>
+                  <option value="Travel">✈️ Travel</option>
+                  <option value="Utilities">⚡ Utilities</option>
+                  <option value="Billing">💳 Billing</option>
+                  <option value="Other">📝 Other</option>
+                </select>
+              </div>
+              <div class="col-md-6">
+                <label class="form-label fw-semibold text-dark">Wallet</label>
+                <select class="form-select form-select-lg bg-light border-0 fs-6 text-muted" id="editWallet">
+                  <option value="">No wallet selected</option>
+                </select>
+              </div>
+            </div>
+
+            <!-- Note -->
+            <div class="mb-4">
+              <label class="form-label fw-semibold text-dark">Note (optional)</label>
+              <textarea class="form-control bg-light border-0 fs-6" id="editNote" rows="3"
+                placeholder="Add a short description or memo..."></textarea>
+            </div>
+
+            <!-- Split Between Section -->
+            <div class="mb-3" id="membersSelectionSection">
+              <h5 class="fw-bold text-dark mb-3">Split Between</h5>
+
+              <!-- Segmented Control Tabs -->
+              <div class="p-1 bg-light rounded-3 d-flex mb-4" style="background-color: #f3f4f6 !important;">
+                <input type="radio" class="btn-check" name="splitType" id="splitEqual" value="equal" checked>
+                <label class="btn btn-sm flex-fill border-0 rounded-3 fw-semibold py-2" for="splitEqual"
+                  id="labelSplitEqual">Equally</label>
+
+                <input type="radio" class="btn-check" name="splitType" id="splitPercentage" value="percentage">
+                <label class="btn btn-sm flex-fill border-0 rounded-3 fw-semibold py-2 text-muted" for="splitPercentage"
+                  id="labelSplitPercentage">By Percentage</label>
+
+                <input type="radio" class="btn-check" name="splitType" id="splitCustom" value="custom">
+                <label class="btn btn-sm flex-fill border-0 rounded-3 fw-semibold py-2 text-muted" for="splitCustom"
+                  id="labelSplitCustom">Custom</label>
+              </div>
+
+              <!-- Split Details Container -->
+              <div id="splitDetailsContainer">
+                <!-- Equal Split View -->
+                <div id="equalSplitView" class="d-none flex-column gap-3">
+                  <div id="equalSplitMembers" class="d-flex flex-column gap-2"
+                    style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+
+                <!-- Percentage Split View -->
+                <div id="percentageSplitView" class="d-none flex-column gap-3">
+                  <div id="percentageSplitMembers" class="d-flex flex-column gap-2"
+                    style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+
+                <!-- Custom Split View -->
+                <div id="customSplitView" class="d-none flex-column gap-3">
+                  <div id="customSplitMembers" class="d-flex flex-column gap-2"
+                    style="max-height: 300px; overflow-y: auto;"></div>
+                </div>
+              </div>
+
+              <!-- Validation Alert -->
+              <div id="splitValidationAlert" class="alert mt-4 mb-0 text-center fw-bold border-0"
+                style="display: none; background-color: #ffe4e6; color: #e11d48;">
+                <!-- Content injected via JS -->
+              </div>
+            </div>
+          </form>
+        </div>
+
+        <!-- Footer -->
+        <div class="modal-footer border-top-0 px-4 pb-4 pt-2 d-flex justify-content-between align-items-center">
+          <button type="button" class="btn btn-outline-danger fw-semibold py-2 px-4" id="deleteExpenseBtn">
+            Delete Expense
+          </button>
+          <div class="d-flex gap-2">
+            <button type="button" class="btn btn-light fw-semibold py-2 px-4" data-bs-dismiss="modal">Cancel</button>
+            <button type="button" class="btn btn-primary fw-semibold py-2 px-4" onclick="submitEditExpense()">Save
+              Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Expense Detail Modal -->
+  <div class="modal fade" id="expenseDetailModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="expenseModalTitle"></h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+        </div>
+        <div class="modal-body" id="expenseModalBody"></div>
+        <div class="modal-footer" id="expenseModalFooter"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Group Modal -->
+  <div class="modal fade" id="editGroupModal" tabindex="-1" aria-labelledby="editGroupModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content rounded-3 shadow-lg border-0">
+        <div class="modal-header bg-gradient-warning text-dark">
+          <h5 class="modal-title fw-bold" id="editGroupModalLabel">
+            <i class="bi bi-pencil-square me-2"></i>Edit Group
+          </h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+
+        <form id="editGroupForm">
+          <div class="modal-body p-4">
+            <input type="hidden" id="editGroupId" />
+            <input type="hidden" id="editGroupOriginalType">
+
+            <!-- Basic Information -->
+            <div class="row mb-4">
+              <div class="col-12">
+                <h6 class="text-primary mb-3">
+                  <i class="bi bi-info-circle me-1"></i>Basic Information
+                </h6>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-8">
+                <div class="mb-3">
+                  <label for="editGroupTitle" class="form-label fw-semibold">
+                    <i class="bi bi-tag me-1"></i>Group Name
+                  </label>
+                  <input type="text" class="form-control form-control-lg" id="editGroupTitle"
+                    placeholder="e.g. Trip to Paris, House Expenses..." required>
+                  <div class="form-text">Choose a descriptive name for your group</div>
+                </div>
+              </div>
+              <div class="col-md-4" id="editGroupCategoryContainer">
+                <div class="mb-3">
+                  <label for="editGroupType" class="form-label fw-semibold">
+                    <i class="bi bi-grid me-1"></i>Category
+                  </label>
+                  <select class="form-select form-select-lg" id="editGroupType" required>
+                    <option value="Home">🏠 Home</option>
+                    <option value="Couple">💕 Couple</option>
+                    <option value="Trip">✈️ Trip</option>
+                    <option value="Work">💼 Work</option>
+                    <option value="Other">📝 Other</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="editGroupCurrency" class="form-label fw-semibold">
+                    <i class="bi bi-currency-exchange me-1"></i>Currency
+                  </label>
+                  <select class="form-select form-select-lg" id="editGroupCurrency" required>
+                    <option value="">-- Select Currency --</option>
+                    <option value="AED">🇦🇪 AED — United Arab Emirates (Dirham)</option>
+                    <option value="AFN">🇦🇫 AFN — Afghanistan (Afghani)</option>
+                    <option value="ALL">🇦🇱 ALL — Albania (Lek)</option>
+                    <option value="AMD">🇦🇲 AMD — Armenia (Dram)</option>
+                    <option value="ANG">🇳🇱 ANG — Netherlands Antilles (Guilder)</option>
+                    <option value="AOA">🇦🇴 AOA — Angola (Kwanza)</option>
+                    <option value="ARS">🇦🇷 ARS — Argentina (Peso)</option>
+                    <option value="AUD">🇦🇺 AUD — Australia (Dollar)</option>
+                    <option value="AWG">🇦🇼 AWG — Aruba (Guilder)</option>
+                    <option value="AZN">🇦🇿 AZN — Azerbaijan (Manat)</option>
+                    <option value="BAM">🇧🇦 BAM — Bosnia and Herzegovina (Marka)</option>
+                    <option value="BBD">🇧🇧 BBD — Barbados (Dollar)</option>
+                    <option value="BDT">🇧🇩 BDT — Bangladesh (Taka)</option>
+                    <option value="BGN">🇧🇬 BGN — Bulgaria (Lev)</option>
+                    <option value="BHD">🇧🇭 BHD — Bahrain (Dinar)</option>
+                    <option value="BIF">🇧🇮 BIF — Burundi (Franc)</option>
+                    <option value="BMD">🇧🇲 BMD — Bermuda (Dollar)</option>
+                    <option value="BND">🇧🇳 BND — Brunei (Dollar)</option>
+                    <option value="BOB">🇧🇴 BOB — Bolivia (Boliviano)</option>
+                    <option value="BRL">🇧🇷 BRL — Brazil (Real)</option>
+                    <option value="BSD">🇧🇸 BSD — Bahamas (Dollar)</option>
+                    <option value="BTN">🇧🇹 BTN — Bhutan (Ngultrum)</option>
+                    <option value="BWP">🇧🇼 BWP — Botswana (Pula)</option>
+                    <option value="BYN">🇧🇾 BYN — Belarus (Ruble)</option>
+                    <option value="BZD">🇧🇿 BZD — Belize (Dollar)</option>
+                    <option value="CAD">🇨🇦 CAD — Canada (Dollar)</option>
+                    <option value="CHF">🇨🇭 CHF — Switzerland (Franc)</option>
+                    <option value="CLP">🇨🇱 CLP — Chile (Peso)</option>
+                    <option value="CNY">🇨🇳 CNY — China (Yuan Renminbi)</option>
+                    <option value="COP">🇨🇴 COP — Colombia (Peso)</option>
+                    <option value="CRC">🇨🇷 CRC — Costa Rica (Colón)</option>
+                    <option value="CUP">🇨🇺 CUP — Cuba (Peso)</option>
+                    <option value="CZK">🇨🇿 CZK — Czech Republic (Koruna)</option>
+                    <option value="DJF">🇩🇯 DJF — Djibouti (Franc)</option>
+                    <option value="DKK">🇩🇰 DKK — Denmark (Krone)</option>
+                    <option value="DOP">🇩🇴 DOP — Dominican Republic (Peso)</option>
+                    <option value="DZD">🇩🇿 DZD — Algeria (Dinar)</option>
+                    <option value="EGP">🇪🇬 EGP — Egypt (Pound)</option>
+                    <option value="EUR">🇪🇺 EUR — European Union (Euro)</option>
+                    <option value="FJD">🇫🇯 FJD — Fiji (Dollar)</option>
+                    <option value="GBP">🇬🇧 GBP — United Kingdom (Pound Sterling)</option>
+                    <option value="GHS">🇬🇭 GHS — Ghana (Cedi)</option>
+                    <option value="GIP">🇬🇮 GIP — Gibraltar (Pound)</option>
+                    <option value="GMD">🇬🇲 GMD — Gambia (Dalasi)</option>
+                    <option value="GNF">🇬🇳 GNF — Guinea (Franc)</option>
+                    <option value="GTQ">🇬🇹 GTQ — Guatemala (Quetzal)</option>
+                    <option value="HKD">🇭🇰 HKD — Hong Kong (Dollar)</option>
+                    <option value="HNL">🇭🇳 HNL — Honduras (Lempira)</option>
+                    <option value="HRK">🇭🇷 HRK — Croatia (Kuna)</option>
+                    <option value="HTG">🇭🇹 HTG — Haiti (Gourde)</option>
+                    <option value="HUF">🇭🇺 HUF — Hungary (Forint)</option>
+                    <option value="IDR">🇮🇩 IDR — Indonesia (Rupiah)</option>
+                    <option value="ILS">🇮🇱 ILS — Israel (Shekel)</option>
+                    <option value="INR">🇮🇳 INR — India (Rupee)</option>
+                    <option value="IQD">🇮🇶 IQD — Iraq (Dinar)</option>
+                    <option value="IRR">🇮🇷 IRR — Iran (Rial)</option>
+                    <option value="ISK">🇮🇸 ISK — Iceland (Krona)</option>
+                    <option value="JMD">🇯🇲 JMD — Jamaica (Dollar)</option>
+                    <option value="JOD">🇯🇴 JOD — Jordan (Dinar)</option>
+                    <option value="JPY">🇯🇵 JPY — Japan (Yen)</option>
+                    <option value="KES">🇰🇪 KES — Kenya (Shilling)</option>
+                    <option value="KGS">🇰🇬 KGS — Kyrgyzstan (Som)</option>
+                    <option value="KHR">🇰🇭 KHR — Cambodia (Riel)</option>
+                    <option value="KPW">🇰🇵 KPW — North Korea (Won)</option>
+                    <option value="KRW">🇰🇷 KRW — South Korea (Won)</option>
+                    <option value="KWD">🇰🇼 KWD — Kuwait (Dinar)</option>
+                    <option value="KZT">🇰🇿 KZT — Kazakhstan (Tenge)</option>
+                    <option value="LAK">🇱🇦 LAK — Laos (Kip)</option>
+                    <option value="LBP">🇱🇧 LBP — Lebanon (Pound)</option>
+                    <option value="LKR">🇱🇰 LKR — Sri Lanka (Rupee)</option>
+                    <option value="LYD">🇱🇾 LYD — Libya (Dinar)</option>
+                    <option value="MAD">🇲🇦 MAD — Morocco (Dirham)</option>
+                    <option value="MDL">🇲🇩 MDL — Moldova (Leu)</option>
+                    <option value="MGA">🇲🇬 MGA — Madagascar (Ariary)</option>
+                    <option value="MKD">🇲🇰 MKD — North Macedonia (Denar)</option>
+                    <option value="MMK">🇲🇲 MMK — Myanmar (Kyat)</option>
+                    <option value="MNT">🇲🇳 MNT — Mongolia (Tugrik)</option>
+                    <option value="MOP">🇲🇴 MOP — Macau (Pataca)</option>
+                    <option value="MRO">🇲🇷 MRO — Mauritania (Ouguiya)</option>
+                    <option value="MUR">🇲🇺 MUR — Mauritius (Rupee)</option>
+                    <option value="MWK">🇲🇼 MWK — Malawi (Kwacha)</option>
+                    <option value="MXN">🇲🇽 MXN — Mexico (Peso)</option>
+                    <option value="MYR">🇲🇾 MYR — Malaysia (Ringgit)</option>
+                    <option value="MZN">🇲🇿 MZN — Mozambique (Metical)</option>
+                    <option value="NAD">🇳🇦 NAD — Namibia (Dollar)</option>
+                    <option value="NGN">🇳🇬 NGN — Nigeria (Naira)</option>
+                    <option value="NOK">🇳🇴 NOK — Norway (Krone)</option>
+                    <option value="NPR">🇳🇵 NPR — Nepal (Rupee)</option>
+                    <option value="NZD">🇳🇿 NZD — New Zealand (Dollar)</option>
+                    <option value="OMR">🇴🇲 OMR — Oman (Rial)</option>
+                    <option value="PEN">🇵🇪 PEN — Peru (Sol)</option>
+                    <option value="PHP">🇵🇭 PHP — Philippines (Peso)</option>
+                    <option value="PKR">🇵🇰 PKR — Pakistan (Rupee)</option>
+                    <option value="PLN">🇵🇱 PLN — Poland (Złoty)</option>
+                    <option value="QAR">🇶🇦 QAR — Qatar (Riyal)</option>
+                    <option value="RON">🇷🇴 RON — Romania (Leu)</option>
+                    <option value="RSD">🇷🇸 RSD — Serbia (Dinar)</option>
+                    <option value="RUB">🇷🇺 RUB — Russia (Ruble)</option>
+                    <option value="SAR">🇸🇦 SAR — Saudi Arabia (Riyal)</option>
+                    <option value="SDG">🇸🇩 SDG — Sudan (Pound)</option>
+                    <option value="SEK">🇸🇪 SEK — Sweden (Krona)</option>
+                    <option value="SGD">🇸🇬 SGD — Singapore (Dollar)</option>
+                    <option value="SYP">🇸🇾 SYP — Syria (Pound)</option>
+                    <option value="THB">🇹🇭 THB — Thailand (Baht)</option>
+                    <option value="TND">🇹🇳 TND — Tunisia (Dinar)</option>
+                    <option value="TRY">🇹🇷 TRY — Türkiye (Lira)</option>
+                    <option value="TWD">🇹🇼 TWD — Taiwan (Dollar)</option>
+                    <option value="TZS">🇹🇿 TZS — Tanzania (Shilling)</option>
+                    <option value="UAH">🇺🇦 UAH — Ukraine (Hryvnia)</option>
+                    <option value="UGX">🇺🇬 UGX — Uganda (Shilling)</option>
+                    <option value="USD">🇺🇸 USD — United States (Dollar)</option>
+                    <option value="UYU">🇺🇾 UYU — Uruguay (Peso)</option>
+                    <option value="UZS">🇺🇿 UZS — Uzbekistan (Som)</option>
+                    <option value="VEF">🇻🇪 VEF — Venezuela (Bolívar)</option>
+                    <option value="VND">🇻🇳 VND — Vietnam (Dong)</option>
+                    <option value="XAF">🌍 XAF — Central Africa (CFA Franc)</option>
+                    <option value="XOF">🌍 XOF — West Africa (CFA Franc)</option>
+                    <option value="YER">🇾🇪 YER — Yemen (Rial)</option>
+                    <option value="ZAR">🇿🇦 ZAR — South Africa (Rand)</option>
+                    <option value="ZMW">🇿🇲 ZMW — Zambia (Kwacha)</option>
+                  </select>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="mb-3">
+                  <label for="editGroupPhoto" class="form-label fw-semibold">
+                    <i class="bi bi-image me-1"></i>Group Photo URL
+                  </label>
+                  <input type="url" class="form-control form-control-lg" id="editGroupPhoto"
+                    placeholder="https://example.com/photo.jpg">
+                  <div class="form-text">Optional: Add a photo URL for your group</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Description -->
+            <div class="mb-4">
+              <h6 class="text-primary mb-3">
+                <i class="bi bi-chat-text me-1"></i>Description
+              </h6>
+              <div class="mb-3">
+                <label for="editGroupDescription" class="form-label fw-semibold">
+                  <i class="bi bi-card-text me-1"></i>Group Description
+                </label>
+                <textarea class="form-control form-control-lg" id="editGroupDescription" rows="3"
+                  placeholder="Describe your group..."></textarea>
+                <div class="form-text">Tell others what this group is about</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="modal-footer bg-light">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+              <i class="bi bi-x-circle me-1"></i>Cancel
+            </button>
+            <button type="submit" class="btn btn-warning fw-bold">
+              <i class="bi bi-check-circle me-1"></i>Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/config.js"></script>
+  <script src="js/notifications.js"></script>
+  <script src="js/navbar.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="js/group.js"></script>
+  <script src="js/expenses.js"></script>
+  <script src="js/auth.js"></script>
+  <script>
+    if (!localStorage.getItem("token")) window.location.href = "login.html";
+  </script>
+</body>
+
+</html>

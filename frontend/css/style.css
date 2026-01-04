@@ -1,0 +1,487 @@
+/* frontend/css/style.css - base styles and responsive tweaks */
+
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, "Helvetica Neue", Arial;
+  background: #f8f9fa;
+  padding-bottom: 120px;
+  /* adjust if your navbar height changes */
+}
+
+
+#navbarMobile nav {
+  z-index: 1030;
+  /* same as Bootstrap modal fallback */
+}
+
+/* Navbar placeholder sizing */
+.navbar-brand {
+  font-weight: 700;
+}
+
+/* Card general style */
+.group-card {
+  border-radius: 15px;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.group-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+/* Group avatar circle */
+.group-avatar {
+  font-size: 18px;
+  font-weight: bold;
+  color: #fff;
+  text-transform: uppercase;
+  background: linear-gradient(135deg, #4facfe, #00f2fe);
+}
+
+/* Optional: random gradient per group */
+.group-avatar[data-color="1"] {
+  background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+}
+
+.group-avatar[data-color="2"] {
+  background: linear-gradient(135deg, #a18cd1, #fbc2eb);
+}
+
+.group-avatar[data-color="3"] {
+  background: linear-gradient(135deg, #f6d365, #fda085);
+}
+
+.group-avatar[data-color="4"] {
+  background: linear-gradient(135deg, #84fab0, #8fd3f4);
+}
+
+.group-avatar[data-color="5"] {
+  background: linear-gradient(135deg, #cfd9df, #e2ebf0);
+}
+
+.group-avatar[data-color="6"] {
+  background: linear-gradient(135deg, #ffecd2, #fcb69f);
+}
+
+/* Action buttons in card */
+.group-card .btn {
+  width: 70px;
+}
+
+/* 🧩 Member card */
+.member-card {
+  border-radius: 16px;
+  background-color: #ffffff;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  padding: 1rem;
+}
+
+.member-card:hover {
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.12);
+}
+
+/* ✨ Selected state */
+.member-card.selected {
+  border: 2px solid #0d6efd;
+  background-color: #e9f2ff;
+  transform: translateY(-3px) scale(1.03);
+  box-shadow: 0 4px 16px rgba(13, 110, 253, 0.25);
+}
+
+/* 🟦 Avatar style */
+.member-card .avatar {
+  width: 58px;
+  height: 58px;
+  background: linear-gradient(135deg, #0d6efd, #66a6ff);
+  color: #fff;
+  font-weight: 600;
+  font-size: 1.2rem;
+  box-shadow: 0 2px 6px rgba(13, 110, 253, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  margin-right: 0.75rem;
+  text-transform: uppercase;
+}
+
+/* 📱 Responsive */
+@media (max-width: 768px) {
+  .member-card {
+    padding: 0.8rem;
+  }
+
+  .member-card .avatar {
+    width: 50px;
+    height: 50px;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+  }
+
+  .member-card h6 {
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .member-card {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+
+  .member-card .avatar {
+    margin-right: 0;
+    margin-bottom: 0.5rem;
+  }
+}
+
+
+.expense-item {
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.expense-item:hover {
+  background: #f9f9f9;
+}
+
+.receipt-icon i {
+  font-size: 1.2rem;
+  color: #6c757d;
+}
+
+.text-success {
+  color: #2e7d32 !important;
+}
+
+.text-danger {
+  color: #c62828 !important;
+}
+
+h6.text-secondary {
+  font-size: 0.9rem;
+  text-transform: capitalize;
+}
+
+/* =================== WALLET CARDS (STAT CARD STYLE) =================== */
+.wallet-card {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.wallet-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: rgba(34, 126, 255, 0.63);
+}
+
+.wallet-card h6 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.wallet-card h3 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  color: #1e293b;
+}
+
+.wallet-card .btn {
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.wallet-card .btn:hover {
+  background-color: #f1f5f9;
+  transform: scale(1.1);
+}
+
+/* Ensure stat-icon styles are present */
+.stat-icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+.bg-primary {
+  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%) !important;
+}
+
+.bg-success {
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%) !important;
+}
+
+.bg-danger {
+  background: linear-gradient(135deg, #f87171 0%, #ef4444 100%) !important;
+}
+
+.bg-info {
+  background: linear-gradient(135deg, #38bdf8 0%, #0ea5e9 100%) !important;
+}
+
+/* Custom Tab Styles for better contrast */
+.nav-tabs-custom {
+  border-bottom: none;
+}
+
+.nav-tabs-custom .nav-link {
+  color: #64748b;
+  font-weight: 600;
+  border: none;
+  border-radius: 8px;
+  margin-bottom: 0;
+  padding: 0.8rem 1.5rem;
+  transition: all 0.2s ease;
+}
+
+.nav-tabs-custom .nav-link:hover {
+  color: #0d6efd;
+  background: rgba(13, 110, 253, 0.05);
+}
+
+.nav-tabs-custom .nav-link.active {
+  color: white;
+  background: linear-gradient(135deg, #0d6efd, #66a6ff);
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.3);
+}
+
+/* If user prefers pill style for these tabs, uncomment below */
+/*
+.nav-tabs-custom .nav-link.active {
+  background: #3b82f6;
+  color: white;
+  border-radius: 8px;
+  border-bottom: none;
+}
+*/
+
+/* =================== INCOME TYPE CARDS =================== */
+.income-type-card {
+  position: relative;
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 2px solid transparent;
+  overflow: hidden;
+  min-height: 140px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+}
+
+.income-type-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #93c5fd 0%, #c4b5fd 50%, #fda4af 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.income-type-card:hover::before {
+  opacity: 1;
+}
+
+.income-type-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: rgba(148, 163, 184, 0.2);
+}
+
+.income-type-card::after {
+  content: '??';
+  position: absolute;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 2rem;
+  opacity: 0.1;
+  transition: all 0.3s ease;
+}
+
+.income-type-card:hover::after {
+  opacity: 0.2;
+  transform: translateX(-50%) scale(1.1);
+}
+
+.income-type-card h6 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #2c3e50;
+  margin-bottom: 1rem;
+  position: relative;
+  z-index: 1;
+}
+
+.income-type-card .btn {
+  font-size: 0.85rem;
+  padding: 0.4rem 0.8rem;
+  border-radius: 8px;
+  transition: all 0.2s ease;
+}
+
+.income-type-card .btn-warning {
+  background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+  border: none;
+  color: white;
+}
+
+.income-type-card .btn-warning:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(251, 191, 36, 0.4);
+}
+
+.income-type-card .btn-danger {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  border: none;
+}
+
+.income-type-card .btn-danger:hover {
+  transform: scale(1.05);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+/* =================== HORIZONTAL SCROLLING (CAROUSEL) =================== */
+.scrolling-wrapper {
+  display: flex;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  gap: 1rem;
+  padding-bottom: 1rem;
+  /* Space for scrollbar */
+  scroll-behavior: smooth;
+}
+
+.scrolling-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.scrolling-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.scrolling-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.scrolling-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+.scrolling-card {
+  flex: 0 0 auto;
+  width: 280px;
+  /* Fixed width for cards in carousel */
+}
+
+/* Adjust wallet card for carousel */
+.wallet-card {
+  height: 100%;
+}
+
+/* =================== MOBILE CAROUSEL FOR WALLETS =================== */
+@media (max-width: 768px) {
+  #walletList {
+    display: flex;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 1rem;
+    scroll-snap-type: x mandatory;
+    -webkit-overflow-scrolling: touch;
+    gap: 1rem;
+    margin-right: -0.75rem;
+    /* Offset container padding */
+    margin-left: -0.75rem;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+
+  #walletList::-webkit-scrollbar {
+    display: none;
+  }
+
+  #walletList>div {
+    flex: 0 0 85%;
+    /* Show 85% of the card to encourage scrolling */
+    scroll-snap-align: center;
+    width: 85%;
+    max-width: 320px;
+  }
+
+  .wallet-card {
+    min-height: 180px;
+    /* Slightly smaller on mobile */
+  }
+}
+
+/* Reduce wallet name size */
+.wallet-card h5 {
+  font-size: 1rem;
+}
+
+/* =================== DESKTOP TABLES =================== */
+.finance-table th {
+  font-weight: 600;
+  color: #64748b;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e2e8f0;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.finance-table td {
+  vertical-align: middle;
+  color: #334155;
+}
+
+.finance-table tbody tr:hover {
+  background-color: #f8fafc;
+}

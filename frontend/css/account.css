@@ -1,0 +1,432 @@
+/* =========================================================
+   🎨 Account Page Styles — Matches Home & Groups Design
+   ========================================================= */
+
+/* ===================== */
+/* 🌈 Global Variables   */
+/* ===================== */
+:root {
+  --primary-color: #007bff;
+  --success-color: #28a745;
+  --warning-color: #ffc107;
+  --info-color: #17a2b8;
+  --danger-color: #dc3545;
+  --light-color: #f8f9fa;
+  --dark-color: #343a40;
+}
+
+/* ===================== */
+/* 🧱 Body & Layout      */
+/* ===================== */
+body {
+  background-color: #f8f9fa;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin-bottom: 5.3rem !important;
+  min-height: 100vh;
+}
+
+/* ===================== */
+/* 🎨 Welcome Banner     */
+/* ===================== */
+.welcome-banner {
+  background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+  color: white;
+  border-radius: 12px;
+  padding: 3rem 2rem;
+  margin-bottom: 2rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.welcome-banner::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  right: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+  animation: pulse 3s ease-in-out infinite;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.welcome-banner > * {
+  position: relative;
+  z-index: 1;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); opacity: 0.5; }
+  50% { transform: scale(1.1); opacity: 0.3; }
+}
+
+.profile-avatar-large {
+  position: relative;
+  display: inline-block;
+  z-index: 1;
+}
+
+.profile-avatar-img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  border: 4px solid white;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+  object-fit: cover;
+  transition: all 0.3s ease;
+}
+
+.profile-avatar-large:hover .profile-avatar-img {
+  transform: scale(1.05);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+}
+
+/* ===================== */
+/* 📊 Stat Cards         */
+/* ===================== */
+.stat-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease;
+  border: none;
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.stat-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+}
+
+/* ===================== */
+/* 🪧 Card Enhancements   */
+/* ===================== */
+.card {
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+}
+
+.card-header {
+  border-radius: 12px 12px 0 0 !important;
+  border: none;
+  padding: 1.25rem 1.5rem;
+  font-weight: 600;
+}
+
+/* ===================== */
+/* 📋 Profile Info        */
+/* ===================== */
+.profile-info-item {
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.profile-info-item:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.profile-info-item i {
+  font-size: 1.1rem;
+}
+
+/* ===================== */
+/* 🎯 Action Cards        */
+/* ===================== */
+.action-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.2s ease;
+  border: none;
+  cursor: pointer;
+  text-decoration: none;
+  color: inherit;
+}
+
+.action-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  color: inherit;
+  text-decoration: none;
+}
+
+.action-card h6 {
+  color: #212529;
+  margin: 0;
+}
+
+/* ===================== */
+/* 📝 Activity Items      */
+/* ===================== */
+.activity-item {
+  border: none;
+  border-radius: 12px;
+  margin-bottom: 0.75rem;
+  padding: 1rem;
+  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  border-left: 4px solid transparent;
+}
+
+.activity-item:hover {
+  transform: translateX(5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border-left-color: var(--primary-color);
+}
+
+.activity-item:last-child {
+  margin-bottom: 0;
+}
+
+/* ===================== */
+/* 📅 Activity Timeline   */
+/* ===================== */
+.activity-timeline {
+  position: relative;
+  padding-left: 2rem;
+}
+
+.activity-timeline::before {
+  content: '';
+  position: absolute;
+  left: 15px;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--primary-color), var(--info-color));
+}
+
+.activity-timeline-item {
+  position: relative;
+  margin-bottom: 1.5rem;
+  padding-left: 2rem;
+}
+
+.activity-timeline-item::before {
+  content: '';
+  position: absolute;
+  left: -8px;
+  top: 8px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--primary-color);
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.activity-timeline-item:last-child {
+  margin-bottom: 0;
+}
+
+/* ===================== */
+/* 🎨 Modal Styles       */
+/* ===================== */
+.modal-content {
+  border-radius: 12px;
+  border: none;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+}
+
+.modal-header {
+  border-radius: 12px 12px 0 0 !important;
+  border: none;
+}
+
+.modal-footer {
+  border-radius: 0 0 12px 12px !important;
+  border-top: 1px solid #e9ecef;
+}
+
+/* ===================== */
+/* 📝 Form Styles         */
+/* ===================== */
+.form-control, .form-select {
+  border-radius: 8px;
+  border: 1px solid #ced4da;
+  transition: all 0.3s ease;
+}
+
+.form-control:focus, .form-select:focus {
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+/* ===================== */
+/* 📱 Responsive Design   */
+/* ===================== */
+@media (max-width: 768px) {
+  .welcome-banner {
+    padding: 2rem 1rem;
+  }
+  
+  .welcome-banner h1 {
+    font-size: 1.75rem;
+  }
+  
+  .welcome-banner .lead {
+    font-size: 1rem;
+  }
+  
+  .profile-avatar-img {
+    width: 100px;
+    height: 100px;
+  }
+  
+  .stat-card {
+    padding: 1.5rem 1rem !important;
+  }
+  
+  .stat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+  }
+  
+  .stat-card h3 {
+    font-size: 1.5rem;
+  }
+  
+  .card-body {
+    padding: 1rem !important;
+  }
+  
+  .card-header {
+    padding: 1rem !important;
+  }
+  
+  .action-card {
+    padding: 1rem 0.5rem !important;
+  }
+  
+  .action-card i {
+    font-size: 2rem !important;
+  }
+  
+  .action-card h6 {
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .welcome-banner {
+    padding: 1.5rem 1rem;
+  }
+  
+  .welcome-banner h1 {
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+  }
+  
+  .welcome-banner .lead {
+    font-size: 0.9rem;
+    margin-bottom: 0.5rem;
+  }
+  
+  .welcome-banner p {
+    font-size: 0.85rem;
+  }
+  
+  .welcome-banner .btn {
+    font-size: 0.85rem;
+    padding: 0.5rem 1rem;
+  }
+  
+  .profile-avatar-img {
+    width: 80px;
+    height: 80px;
+    border-width: 3px;
+  }
+  
+  .stat-card {
+    padding: 1rem 0.75rem !important;
+  }
+  
+  .stat-icon {
+    width: 35px;
+    height: 35px;
+    font-size: 16px;
+    margin-bottom: 0.75rem !important;
+  }
+  
+  .stat-card h3 {
+    font-size: 1.25rem;
+  }
+  
+  .stat-card p {
+    font-size: 0.85rem;
+  }
+  
+  .profile-info-item {
+    padding-bottom: 0.75rem;
+  }
+  
+  .profile-info-item i {
+    font-size: 1rem;
+  }
+  
+  .activity-item {
+    padding: 0.75rem;
+  }
+  
+  .modal-body {
+    padding: 1rem !important;
+  }
+}
+
+/* ===================== */
+/* ✨ Animations          */
+/* ===================== */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+/* ===================== */
+/* 🧷 Loading Spinner    */
+/* ===================== */
+.loading-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid var(--primary-color);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+

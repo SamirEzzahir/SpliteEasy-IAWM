@@ -1,0 +1,237 @@
+/* Global Styles */
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.econome-header {
+    background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+    color: white;
+    padding: 3rem 0;
+    margin-bottom: 2rem;
+    border-radius: 0 0 2rem 2rem;
+    box-shadow: 0 4px 20px rgba(13, 110, 253, 0.2);
+}
+
+.card {
+    border: none;
+    border-radius: 1rem;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Input Section */
+.input-card {
+    background: white;
+    border-radius: 1.5rem;
+    padding: 2rem;
+    margin-top: -4rem;
+    position: relative;
+    z-index: 10;
+}
+
+.form-control-lg {
+    border-radius: 1rem;
+    padding: 1rem 1.5rem;
+    font-size: 1.25rem;
+    border: 2px solid #e9ecef;
+}
+
+.form-control-lg:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.15);
+}
+
+.system-select-card {
+    cursor: pointer;
+    border: 2px solid transparent;
+    padding: 1rem;
+    text-align: center;
+    border-radius: 1rem;
+    background: #f8f9fa;
+    transition: all 0.2s ease;
+}
+
+.system-select-card:hover {
+    background: #e9ecef;
+}
+
+.system-select-card.active {
+    border-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.05);
+    color: #0d6efd;
+}
+
+.system-select-card i {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    display: block;
+}
+
+/* Jar Cards */
+.jar-card {
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    color: white;
+}
+
+.jar-card .card-body {
+    position: relative;
+    z-index: 2;
+}
+
+.jar-icon {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+    opacity: 0.9;
+}
+
+.jar-percentage {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    font-size: 1.5rem;
+    font-weight: bold;
+    opacity: 0.8;
+}
+
+.jar-amount {
+    font-size: 2rem;
+    font-weight: 800;
+    margin: 0.5rem 0;
+}
+
+.progress-thin {
+    height: 6px;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 3px;
+    margin-top: 1rem;
+}
+
+.progress-bar-white {
+    background: white;
+    border-radius: 3px;
+}
+
+/* Jar Colors */
+.bg-orange {
+    background: linear-gradient(135deg, #fd7e14 0%, #ffc107 100%);
+}
+
+.bg-yellow {
+    background: linear-gradient(135deg, #ffc107 0%, #ffdb4d 100%);
+    color: #333;
+    /* Dark text for yellow background */
+}
+
+.bg-yellow .progress-thin {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.bg-yellow .progress-bar-white {
+    background: #333;
+}
+
+.bg-grey {
+    background: linear-gradient(135deg, #6c757d 0%, #adb5bd 100%);
+}
+
+.bg-blue {
+    background: linear-gradient(135deg, #0d6efd 0%, #6610f2 100%);
+}
+
+.bg-light-green {
+    background: linear-gradient(135deg, #20c997 0%, #0dcaf0 100%);
+}
+
+.bg-green {
+    background: linear-gradient(135deg, #198754 0%, #20c997 100%);
+}
+
+/* Animation */
+@keyframes countUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.animate-in {
+    animation: countUp 0.5s ease forwards;
+}
+
+/* =========================================
+   Strategy Modal Custom Styles
+   ========================================= */
+
+/* Orange (NEC) */
+.bg-orange-subtle {
+    background-color: #fff3cd !important;
+}
+
+.text-orange {
+    color: #fd7e14 !important;
+}
+
+.border-orange {
+    border-color: #fd7e14 !important;
+}
+
+/* Yellow (FFA) */
+.bg-yellow-subtle {
+    background-color: #fff9db !important;
+}
+
+.text-yellow {
+    color: #e6ac00 !important;
+    /* Darker yellow for text visibility */
+}
+
+.border-yellow {
+    border-color: #ffc107 !important;
+}
+
+/* Grey (EDU) */
+.bg-grey-subtle {
+    background-color: #e9ecef !important;
+}
+
+/* text-secondary and border-secondary are standard BS5 */
+
+/* Blue (LTSS) */
+.bg-blue-subtle {
+    background-color: #cfe2ff !important;
+}
+
+/* text-primary and border-primary are standard BS5 */
+
+/* Green (PLAY) */
+.bg-green-subtle {
+    background-color: #d1e7dd !important;
+}
+
+/* text-success and border-success are standard BS5 */
+
+/* Teal (GIVE) */
+.bg-teal-subtle {
+    background-color: #e0f7fa !important;
+}
+
+.text-teal {
+    color: #20c997 !important;
+}
+
+.border-teal {
+    border-color: #20c997 !important;
+}
