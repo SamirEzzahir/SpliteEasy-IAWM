@@ -81,9 +81,9 @@ const searchUsers = async (req, res, next) => {
  */
 const sendFriendRequest = async (req, res, next) => {
   try {
-    const { userId } = req.params;
+    const { friendId } = req.params;
     
-    if (userId === req.user._id.toString()) {
+    if (friendId === req.user._id.toString()) {
       return res.status(400).json({
         success: false,
         message: 'Cannot send friend request to yourself'
@@ -91,7 +91,7 @@ const sendFriendRequest = async (req, res, next) => {
     }
     
     // Check if target user exists
-    const targetUser = await User.findById(userId);
+    const targetUser = await User.findById(friendId);
     if (!targetUser) {
       return res.status(404).json({
         success: false,
@@ -100,25 +100,22 @@ const sendFriendRequest = async (req, res, next) => {
     }
     
     // Send friend request
-    const request = await Friend.sendRequest(req.user._id, userId);
+    const request = await Friend.sendRequest(req.user._id, friendId);
     
     // Log activity
     await ActivityLog.logActivity({
       userId: req.user._id,
       action: 'friend_request_sent',
       details: {
-        targetUserId: userId,
+        targetUserId: friendId,
         targetUsername: targetUser.username
       },
       ipAddress: req.ip,
       userAgent: req.get('User-Agent')
     });
     
-    res.status(201).json({
-      success: true,
-      message: 'Friend request sent successfully',
-      data: { request }
-    });
+    // Return simple message like Python version
+    res.status(200).json({ message: 'Friend request sent' });
   } catch (error) {
     if (error.message.includes('already')) {
       return res.status(400).json({

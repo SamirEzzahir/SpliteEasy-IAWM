@@ -36,6 +36,26 @@ function transformDecimal(doc, ret) {
   return ret;
 }
 
+// Pre-save middleware to normalize category values
+walletSchema.pre('save', function(next) {
+  if (this.category) {
+    // Normalize category to lowercase and handle special cases
+    const categoryMap = {
+      'Cash': 'cash',
+      'Bank': 'bank', 
+      'Credit Card': 'credit_card',
+      'Other': 'other',
+      'cash': 'cash',
+      'bank': 'bank',
+      'credit_card': 'credit_card',
+      'other': 'other'
+    };
+    
+    this.category = categoryMap[this.category] || this.category.toLowerCase();
+  }
+  next();
+});
+
 // Indexes
 walletSchema.index({ userId: 1 });
 walletSchema.index({ category: 1 });

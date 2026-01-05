@@ -11,9 +11,26 @@ router.use(protect);
 // @access  Private
 router.get('/', async (req, res, next) => {
   try {
+    const { limit = 10 } = req.query;
     // For now, return empty notifications
     // TODO: Implement proper notifications system
     res.status(200).json([]);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// @desc    Mark all notifications as read
+// @route   POST /api/notifications/read-all
+// @access  Private
+router.post('/read-all', async (req, res, next) => {
+  try {
+    // For now, return success
+    // TODO: Implement mark all as read
+    res.status(200).json({ 
+      success: true, 
+      message: 'All notifications marked as read' 
+    });
   } catch (error) {
     next(error);
   }

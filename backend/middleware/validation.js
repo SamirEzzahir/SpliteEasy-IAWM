@@ -65,7 +65,9 @@ const schemas = {
     description: Joi.string().max(500).optional(),
     type: Joi.string().max(50).optional(),
     currency: Joi.string().length(3).default('USD').optional(),
-    member_ids: Joi.array().items(Joi.string().hex().length(24)).optional()
+    member_ids: Joi.array().items(
+      Joi.string().pattern(/^[0-9a-fA-F]{24}$/)
+    ).optional().default([])
   }),
 
   groupUpdate: Joi.object({
@@ -77,21 +79,28 @@ const schemas = {
 
   // Expense schemas
   expenseCreate: Joi.object({
-    groupId: Joi.string().hex().length(24).required(),
+    groupId: Joi.string().hex().length(24).optional(),
+    group_id: Joi.string().hex().length(24).optional(), // Accept ObjectId string
     description: Joi.string().min(1).max(200).required(),
     amount: Joi.number().positive().precision(2).required(),
     currency: Joi.string().length(3).default('USD').optional(),
     category: Joi.string().max(50).optional(),
+    payerId: Joi.string().hex().length(24).optional(),
+    payer_id: Joi.string().hex().length(24).optional(), // Accept ObjectId string
     walletId: Joi.string().hex().length(24).optional(),
+    wallet_id: Joi.string().hex().length(24).allow(null).optional(), // Accept ObjectId string or null
     splitType: Joi.string().valid('equal', 'exact', 'percentage').default('equal').optional(),
-    note: Joi.string().max(500).optional(),
+    note: Joi.string().max(500).allow('').optional(),
+    created_at: Joi.date().optional(), // Allow created_at from frontend
     splits: Joi.array().items(
       Joi.object({
-        userId: Joi.string().hex().length(24).required(),
-        shareAmount: Joi.number().positive().precision(2).required()
-      })
+        userId: Joi.string().hex().length(24).optional(),
+        user_id: Joi.string().hex().length(24).optional(), // Accept ObjectId string
+        shareAmount: Joi.number().positive().precision(2).optional(),
+        share_amount: Joi.number().positive().precision(2).optional() // Accept both formats
+      }).or('userId', 'user_id').or('shareAmount', 'share_amount')
     ).optional()
-  }),
+  }).or('groupId', 'group_id').or('payerId', 'payer_id'),
 
   expenseUpdate: Joi.object({
     description: Joi.string().min(1).max(200).optional(),
@@ -112,13 +121,13 @@ const schemas = {
   // Wallet schemas
   walletCreate: Joi.object({
     name: Joi.string().min(1).max(50).required(),
-    category: Joi.string().valid('cash', 'bank', 'credit_card', 'other').required(),
+    category: Joi.string().valid('cash', 'bank', 'credit_card', 'other', 'Cash', 'Bank', 'Credit Card', 'Other').required(),
     balance: Joi.number().precision(2).default(0).optional()
   }),
 
   walletUpdate: Joi.object({
     name: Joi.string().min(1).max(50).optional(),
-    category: Joi.string().valid('cash', 'bank', 'credit_card', 'other').optional(),
+    category: Joi.string().valid('cash', 'bank', 'credit_card', 'other', 'Cash', 'Bank', 'Credit Card', 'Other').optional(),
     balance: Joi.number().precision(2).optional()
   }),
 
@@ -145,11 +154,32 @@ const schemas = {
   // Query parameter schemas
   pagination: Joi.object({
     page: Joi.number().integer().min(1).default(1),
-    limit: Joi.number().integer().min(1).max(100).default(20)
+    limit: Joi.number().integer().min(1).max(100).default(20),
+    _t: Joi.number().optional() // Allow cache-busting timestamp
   }),
 
   // MongoDB ObjectId validation
-  objectId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+  objectId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required(),
+  
+  // Group ID validation (for :groupId params)
+  groupIdParam: Joi.object({
+    groupId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+  }),
+  
+  // ID validation (for :id params)
+  idParam: Joi.object({
+    id: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+  }),
+  
+  // User ID validation (for :userId params)
+  userIdParam: Joi.object({
+    userId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+  }),
+  
+  // Friend ID validation (for :friendId params)
+  friendIdParam: Joi.object({
+    friendId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+  })
 };
 
 module.exports = {

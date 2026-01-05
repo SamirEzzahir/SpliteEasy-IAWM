@@ -1,4 +1,4 @@
-const API_URL = "http://pcrox.ddns.net:8000";
+const API_URL = "http://127.0.0.1:8006/api";
 
 async function checkAuth() {
     const token = localStorage.getItem("token");

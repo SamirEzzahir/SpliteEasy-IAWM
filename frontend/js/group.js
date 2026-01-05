@@ -478,16 +478,16 @@ async function renderGroupsList() {
         </td>
         <td>
           <div class="btn-group" role="group">
-            <button class="btn btn-sm btn-primary" onclick="openGroup(${g.id})" title="Open Group">
+            <button class="btn btn-sm btn-primary" onclick="openGroup('${g.id}')" title="Open Group">
               <i class="bi bi-box-arrow-up-right"></i>
-</button>
+            </button>
             <button class="btn btn-sm btn-outline-warning" 
-                    onclick="openEditGroupModal(${g.id})" title="Edit Group">
+                    onclick="openEditGroupModal('${g.id}')" title="Edit Group">
               <i class="bi bi-pencil"></i>
             </button>
             ${((g.type === "Personal" || g.type === "Personal Expenses") && g.title === "Personal Expenses")
           ? `<button class="btn btn-sm btn-outline-secondary" disabled title="Cannot delete default group"><i class="bi bi-lock"></i></button>`
-          : `<button class="btn btn-sm btn-outline-danger" onclick="deleteGroup(${g.id})" title="Delete Group"><i class="bi bi-trash"></i></button>`
+          : `<button class="btn btn-sm btn-outline-danger" onclick="deleteGroup('${g.id}')" title="Delete Group"><i class="bi bi-trash"></i></button>`
         }
           </div>
           </td>
@@ -591,16 +591,16 @@ async function renderGroupsMobileCards() {
     <div class="text-end">
       <div class="text-muted fw-bold mb-2">${g.currency || ""}</div>
             <div class="btn-group-vertical" role="group">
-              <button class="btn btn-sm btn-outline-primary mb-1" onclick="event.stopPropagation(); openGroup(${g.id})" title="Open">
+            <button class="btn btn-sm btn-outline-primary mb-1" onclick="event.stopPropagation(); openGroup('${g.id}')" title="Open">
                 <i class="bi bi-box-arrow-up-right"></i>
               </button>
             <button class="btn btn-sm btn-outline-warning mb-1"
-                      onclick="event.stopPropagation(); openEditGroupModal(${g.id})" title="Edit">
+                      onclick="event.stopPropagation(); openEditGroupModal('${g.id}')" title="Edit">
                 <i class="bi bi-pencil"></i>
               </button>
               ${((g.type === "Personal" || g.type === "Personal Expenses") && g.title === "Personal Expenses")
           ? `<button class="btn btn-sm btn-outline-secondary" disabled title="Cannot delete default group"><i class="bi bi-lock"></i></button>`
-          : `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteGroup(${g.id})" title="Delete"><i class="bi bi-trash"></i></button>`
+          : `<button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteGroup('${g.id}')" title="Delete"><i class="bi bi-trash"></i></button>`
         }
             </div>
     </div>
@@ -704,15 +704,15 @@ function renderFilteredGroupsTable() {
       <td><small class="text-muted">${getRelativeTime(g.created_at)}</small></td>
       <td>
         <div class="btn-group" role="group">
-          <button class="btn btn-sm btn-primary" onclick="openGroup(${g.id})" title="Open Group">
+          <button class="btn btn-sm btn-primary" onclick="openGroup('${g.id}')" title="Open Group">
             <i class="bi bi-box-arrow-up-right"></i>
           </button>
           <button class="btn btn-sm btn-outline-warning" 
-                  onclick="openEditGroupModal(${g.id})" title="Edit Group">
+                  onclick="openEditGroupModal('${g.id}')" title="Edit Group">
             <i class="bi bi-pencil"></i>
           </button>
           ${g.type !== 'Personal' ? `
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteGroup(${g.id})" title="Delete Group">
+          <button class="btn btn-sm btn-outline-danger" onclick="deleteGroup('${g.id}')" title="Delete Group">
             <i class="bi bi-trash"></i>
           </button>
           ` : ''}
@@ -776,14 +776,14 @@ function renderFilteredGroupsMobile() {
         <div class="text-end">
           <div class="text-muted fw-bold mb-2">${g.currency || ""}</div>
           <div class="btn-group-vertical" role="group">
-            <button class="btn btn-sm btn-outline-primary mb-1" onclick="event.stopPropagation(); openGroup(${g.id})" title="Open">
+            <button class="btn btn-sm btn-outline-primary mb-1" onclick="event.stopPropagation(); openGroup('${g.id}')" title="Open">
               <i class="bi bi-box-arrow-up-right"></i>
             </button>
             <button class="btn btn-sm btn-outline-warning mb-1"
-                    onclick="event.stopPropagation(); openEditGroupModal(${g.id})" title="Edit">
+                    onclick="event.stopPropagation(); openEditGroupModal('${g.id}')" title="Edit">
               <i class="bi bi-pencil"></i>
             </button>
-            <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteGroup(${g.id})" title="Delete">
+            <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteGroup('${g.id}')" title="Delete">
               <i class="bi bi-trash"></i>
             </button>
           </div>
@@ -862,8 +862,26 @@ function toggleFriendSelection() {
 
 // Make globally available
 window.toggleFriendSelection = toggleFriendSelection;
+window.openGroup = openGroup;
+window.createGroup = createGroup;
+window.selectAllFriends = selectAllFriends;
+window.deselectAllFriends = deselectAllFriends;
+window.selectAllMembers = selectAllMembers;
+window.deselectAllMembers = deselectAllMembers;
+window.addExpenseModalSubmit = addExpenseModalSubmit;
+window.deleteGroup = deleteGroup;
+window.renderGroupsList = renderGroupsList;
+window.renderGroupsMobileCards = renderGroupsMobileCards;
+
+// Debug: Log that functions are exposed
+console.log("🔧 DEBUG: Functions exposed to window:", {
+  openGroup: typeof window.openGroup,
+  deleteGroup: typeof window.deleteGroup,
+  createGroup: typeof window.createGroup
+});
 
 function openGroup(id) {
+  console.log("🔧 DEBUG: openGroup called with id:", id);
   window.location.href = `expenses.html?id=${id}`;
 }
 
@@ -1194,9 +1212,9 @@ async function loadPayersForGroup(groupId) {
     if (!res.ok) throw new Error("Failed to fetch members");
     const members = await res.json();
 
-    const payerSelect = document.getElementById('expensePayer');
+    const payerSelect = document.getElementById('addPayer') || document.getElementById('expensePayer');
     if (!payerSelect) {
-      console.warn("Payer select not found");
+      console.warn("Payer select not found (tried both 'addPayer' and 'expensePayer')");
       return;
     }
 
@@ -1229,7 +1247,7 @@ async function loadPayersForGroup(groupId) {
     console.log("✅ Payers loaded successfully");
   } catch (err) {
     console.error("❌ Error loading payers:", err);
-    const payerSelect = document.getElementById('expensePayer');
+    const payerSelect = document.getElementById('addPayer') || document.getElementById('expensePayer');
     if (payerSelect) {
       payerSelect.innerHTML = '<option value="">Error loading payers</option>';
     }
@@ -1427,7 +1445,7 @@ function updateWalletsForPayer(payerId = null) {
 
   // Get current user
   fetchCurrentUser().then(currentUser => {
-    if (currentUser && parseInt(selectedPayerId) === currentUser.id) {
+    if (currentUser && selectedPayerId === currentUser.id.toString()) {
       // Show wallet section only for current user
       walletSection.style.display = 'block';
 
@@ -1514,14 +1532,14 @@ async function addExpenseModalSubmit() {
     const expenseDate = new Date(`${date}T${time}`);
 
     const expenseData = {
-      group_id: parseInt(groupId),
-      payer_id: parseInt(payerId),
+      group_id: groupId,
+      payer_id: payerId,
       description: description,
       note: note,
       amount: amount,
       currency: "MAD",
       category: category,
-      wallet_id: walletId ? parseInt(walletId) : null,
+      wallet_id: walletId || null,
       split_type: "equal",
       created_at: expenseDate.toISOString(),
       splits

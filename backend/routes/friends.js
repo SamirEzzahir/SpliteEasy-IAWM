@@ -19,10 +19,10 @@ router.get('/my', friendController.getMyFriends);
 router.get('/search', friendController.searchUsers);
 
 // @desc    Send friend request
-// @route   POST /api/friends/request/:userId
+// @route   POST /api/friends/request/:friendId
 // @access  Private
-router.post('/request/:userId', 
-  validate(schemas.objectId, 'params'), 
+router.post('/request/:friendId', 
+  validate(schemas.friendIdParam, 'params'), 
   friendController.sendFriendRequest
 );
 

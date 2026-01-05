@@ -26,7 +26,15 @@ const createGroup = async (req, res, next) => {
     
     // Add other members if provided
     if (member_ids && member_ids.length > 0) {
-      for (const memberId of member_ids) {
+      // Filter out invalid IDs (undefined, null, empty strings)
+      const validMemberIds = member_ids.filter(id => 
+        id && 
+        typeof id === 'string' && 
+        id !== 'undefined' && 
+        id.match(/^[0-9a-fA-F]{24}$/)
+      );
+      
+      for (const memberId of validMemberIds) {
         try {
           await Membership.addMember(group._id, memberId, false);
         } catch (error) {
@@ -89,19 +97,7 @@ const getUserGroups = async (req, res, next) => {
     
     const total = await Membership.countDocuments({ userId: req.user._id });
     
-    res.status(200).json({
-      success: true,
-      data: {
-        groups,
-        pagination: {
-          totalPages: Math.ceil(total / limit),
-          currentPage: parseInt(page),
-          totalGroups: total,
-          hasNext: page < Math.ceil(total / limit),
-          hasPrev: page > 1
-        }
-      }
-    });
+    res.status(200).json(groups);
   } catch (error) {
     next(error);
   }
@@ -133,22 +129,35 @@ const getGroupById = async (req, res, next) => {
       });
     }
     
-    // Get members
-    const members = await Membership.getGroupMembers(group._id);
+    // Get members (like Python version includes members in group object)
+    const memberships = await Membership.getGroupMembers(group._id);
+    
+    // Transform to match frontend expectations
+    const members = memberships.map(membership => ({
+      user_id: membership.userId._id,
+      username: membership.userId.username,
+      firstName: membership.userId.firstName,
+      lastName: membership.userId.lastName,
+      email: membership.userId.email,
+      profilePhoto: membership.userId.profilePhoto,
+      isAdmin: membership.isAdmin,
+      updatedAt: membership.updatedAt
+    }));
     
     // Check if current user is admin
     const isAdmin = await group.isAdmin(req.user._id);
     
-    res.status(200).json({
-      success: true,
-      data: {
-        group: {
-          ...group.toObject(),
-          members,
-          isAdmin
-        }
-      }
-    });
+    // Return group with members included (like Python version)
+    const groupData = {
+      ...group.toObject(),
+      members,
+      members_count: members.length,
+      members_usernames: members.map(m => m.username),
+      isAdmin,
+      owner_id: group.ownerId._id
+    };
+    
+    res.status(200).json(groupData);
   } catch (error) {
     next(error);
   }
@@ -455,6 +464,111 @@ const leaveGroup = async (req, res, next) => {
   }
 };
 
+/**
+ * @desc    Get group members
+ * @route   GET /api/groups/:id/members
+ * @access  Private
+ */
+const getGroupMembers = async (req, res, next) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: 'Group not found'
+      });
+    }
+    
+    // Check if user is member
+    const isMember = await group.isMember(req.user._id);
+    if (!isMember) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view group members'
+      });
+    }
+    
+    // Get members
+    const memberships = await Membership.getGroupMembers(group._id);
+    
+    // Transform to match frontend expectations
+    const members = memberships.map(membership => ({
+      user_id: membership.userId._id,
+      username: membership.userId.username,
+      firstName: membership.userId.firstName,
+      lastName: membership.userId.lastName,
+      email: membership.userId.email,
+      profilePhoto: membership.userId.profilePhoto,
+      isAdmin: membership.isAdmin,
+      updatedAt: membership.updatedAt
+    }));
+    
+    res.status(200).json(members);
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    Check if user can leave group
+ * @route   GET /api/groups/:id/can_leave
+ * @access  Private
+ */
+const canLeaveGroup = async (req, res, next) => {
+  try {
+    const group = await Group.findById(req.params.id);
+    
+    if (!group) {
+      return res.status(404).json({
+        success: false,
+        message: 'Group not found'
+      });
+    }
+    
+    // Check if user is member
+    const isMember = await group.isMember(req.user._id);
+    if (!isMember) {
+      return res.status(403).json({
+        success: false,
+        message: 'Not authorized to view this group'
+      });
+    }
+    
+    // Cannot leave if user is owner
+    if (group.ownerId.toString() === req.user._id.toString()) {
+      return res.status(200).json({
+        can_leave: false,
+        reason: 'Group owner cannot leave the group. Transfer ownership or delete the group.'
+      });
+    }
+    
+    // Check if user has unsettled expenses
+    try {
+      const Split = require('../models/Split');
+      const userBalance = await Split.calculateUserBalance(req.user._id, group._id);
+      
+      if (Math.abs(userBalance.balance) > 0.01) {
+        return res.status(200).json({
+          can_leave: false,
+          reason: 'Cannot leave group with unsettled expenses. Please settle all expenses first.',
+          balance: userBalance
+        });
+      }
+    } catch (error) {
+      // If Split model doesn't exist or balance calculation fails, allow leaving
+      console.log('Balance calculation failed:', error.message);
+    }
+    
+    res.status(200).json({
+      can_leave: true,
+      reason: null
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   createGroup,
   getUserGroups,
@@ -463,5 +577,7 @@ module.exports = {
   deleteGroup,
   addMember,
   removeMember,
-  leaveGroup
+  leaveGroup,
+  getGroupMembers,
+  canLeaveGroup
 };

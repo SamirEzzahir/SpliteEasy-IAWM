@@ -8,10 +8,9 @@ const Expense = require('../models/Expense');
 const Split = require('../models/Split');
 const Group = require('../models/Group');
 const Membership = require('../models/Membership');
-const Notification = require('../models/Notification');
-const ActivityLog = require('../models/ActivityLog');
 const { protect } = require('../middleware/auth');
 const { validate, schemas } = require('../middleware/validation');
+const expenseController = require('../controllers/expenseController');
 
 const router = express.Router();
 
@@ -58,174 +57,21 @@ const upload = multer({
 // @desc    Create expense
 // @route   POST /api/expenses
 // @access  Private
-router.post('/', validate(schemas.expenseCreate), async (req, res, next) => {
-  try {
-    const { groupId, description, amount, currency, category, walletId, splitType, note, splits } = req.body;
-    
-    // Check if group exists and user is member
-    const group = await Group.findById(groupId);
-    if (!group) {
-      return res.status(404).json({
-        success: false,
-        message: 'Group not found'
-      });
-    }
-    
-    const isMember = await group.isMember(req.user._id);
-    if (!isMember) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to add expenses to this group'
-      });
-    }
-    
-    // Create expense
-    const expense = await Expense.create({
-      groupId,
-      payerId: req.user._id,
-      addedBy: req.user._id,
-      description,
-      amount,
-      currency: currency || group.currency,
-      category,
-      walletId,
-      splitType,
-      note
-    });
-    
-    // Handle splits
-    let expenseSplits;
-    if (splits && splits.length > 0) {
-      // Validate splits
-      if (!expense.validateSplits(splits)) {
-        await Expense.findByIdAndDelete(expense._id);
-        return res.status(400).json({
-          success: false,
-          message: 'Split amounts do not match expense total'
-        });
-      }
-      expenseSplits = splits;
-    } else {
-      // Equal split among all members
-      const members = await Membership.getGroupMembers(groupId);
-      const memberIds = members.map(m => m.userId._id);
-      expenseSplits = expense.calculateEqualSplits(memberIds);
-    }
-    
-    // Create splits
-    await Split.createSplits(expense._id, expenseSplits);
-    
-    // Create notifications
-    await Notification.createExpenseNotification(expense, 'added');
-    
-    // Get populated expense
-    const populatedExpense = await Expense.findById(expense._id)
-      .populate('payerId', 'firstName lastName username')
-      .populate('addedBy', 'firstName lastName username')
-      .populate('walletId', 'name category')
-      .populate('splits');
-    
-    res.status(201).json({
-      success: true,
-      message: 'Expense created successfully',
-      data: { expense: populatedExpense }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+router.post('/', validate(schemas.expenseCreate), expenseController.createExpense);
 
 // @desc    Get group expenses
 // @route   GET /api/expenses/:groupId
 // @access  Private
 router.get('/:groupId', 
-  validate(schemas.objectId, 'params'),
+  validate(schemas.groupIdParam, 'params'),
   validate(schemas.pagination, 'query'),
-  async (req, res, next) => {
-    try {
-      const { groupId } = req.params;
-      const { page, limit, category, payerId, startDate, endDate, sortBy, sortOrder } = req.query;
-      
-      // Check if group exists and user is member
-      const group = await Group.findById(groupId);
-      if (!group) {
-        return res.status(404).json({
-          success: false,
-          message: 'Group not found'
-        });
-      }
-      
-      const isMember = await group.isMember(req.user._id);
-      if (!isMember) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to view expenses for this group'
-        });
-      }
-      
-      const result = await Expense.getGroupExpenses(groupId, {
-        page: parseInt(page),
-        limit: parseInt(limit),
-        category,
-        payerId,
-        startDate,
-        endDate,
-        sortBy,
-        sortOrder
-      });
-      
-      res.status(200).json({
-        success: true,
-        data: result
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
+  expenseController.getGroupExpenses
 );
 
 // @desc    Get expense by ID
 // @route   GET /api/expenses/exp/:id
 // @access  Private
-router.get('/exp/:id', validate(schemas.objectId, 'params'), async (req, res, next) => {
-  try {
-    const expense = await Expense.findById(req.params.id)
-      .populate('payerId', 'firstName lastName username profilePhoto')
-      .populate('addedBy', 'firstName lastName username')
-      .populate('walletId', 'name category')
-      .populate({
-        path: 'splits',
-        populate: {
-          path: 'userId',
-          select: 'firstName lastName username profilePhoto'
-        }
-      });
-    
-    if (!expense) {
-      return res.status(404).json({
-        success: false,
-        message: 'Expense not found'
-      });
-    }
-    
-    // Check if user is member of the group
-    const group = await Group.findById(expense.groupId);
-    const isMember = await group.isMember(req.user._id);
-    if (!isMember) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to view this expense'
-      });
-    }
-    
-    res.status(200).json({
-      success: true,
-      data: { expense }
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+router.get('/exp/:id', validate(schemas.objectId, 'params'), expenseController.getExpenseById);
 
 // @desc    Update expense
 // @route   PUT /api/expenses/:id
@@ -233,131 +79,13 @@ router.get('/exp/:id', validate(schemas.objectId, 'params'), async (req, res, ne
 router.put('/:id',
   validate(schemas.objectId, 'params'),
   validate(schemas.expenseUpdate),
-  async (req, res, next) => {
-    try {
-      const expense = await Expense.findById(req.params.id);
-      
-      if (!expense) {
-        return res.status(404).json({
-          success: false,
-          message: 'Expense not found'
-        });
-      }
-      
-      // Check if user can update (added by user or group admin)
-      const group = await Group.findById(expense.groupId);
-      const isAdmin = await group.isAdmin(req.user._id);
-      const isCreator = expense.addedBy.toString() === req.user._id.toString();
-      
-      if (!isAdmin && !isCreator) {
-        return res.status(403).json({
-          success: false,
-          message: 'Not authorized to update this expense'
-        });
-      }
-      
-      const allowedFields = ['description', 'amount', 'currency', 'category', 'walletId', 'splitType', 'note', 'splits'];
-      const updates = {};
-      
-      allowedFields.forEach(field => {
-        if (req.body[field] !== undefined) {
-          updates[field] = req.body[field];
-        }
-      });
-      
-      // Update expense
-      const updatedExpense = await Expense.findByIdAndUpdate(
-        req.params.id,
-        updates,
-        { new: true, runValidators: true }
-      );
-      
-      // Handle splits update
-      if (req.body.splits) {
-        if (!updatedExpense.validateSplits(req.body.splits)) {
-          return res.status(400).json({
-            success: false,
-            message: 'Split amounts do not match expense total'
-          });
-        }
-        await Split.createSplits(updatedExpense._id, req.body.splits);
-      }
-      
-      // Create notifications
-      await Notification.createExpenseNotification(updatedExpense, 'updated');
-      
-      // Get populated expense
-      const populatedExpense = await Expense.findById(updatedExpense._id)
-        .populate('payerId', 'firstName lastName username')
-        .populate('addedBy', 'firstName lastName username')
-        .populate('walletId', 'name category')
-        .populate('splits');
-      
-      res.status(200).json({
-        success: true,
-        message: 'Expense updated successfully',
-        data: { expense: populatedExpense }
-      });
-    } catch (error) {
-      next(error);
-    }
-  }
+  expenseController.updateExpense
 );
 
 // @desc    Delete expense
 // @route   DELETE /api/expenses/:id
 // @access  Private
-router.delete('/:id', validate(schemas.objectId, 'params'), async (req, res, next) => {
-  try {
-    const expense = await Expense.findById(req.params.id);
-    
-    if (!expense) {
-      return res.status(404).json({
-        success: false,
-        message: 'Expense not found'
-      });
-    }
-    
-    // Check if user can delete (added by user or group admin)
-    const group = await Group.findById(expense.groupId);
-    const isAdmin = await group.isAdmin(req.user._id);
-    const isCreator = expense.addedBy.toString() === req.user._id.toString();
-    
-    if (!isAdmin && !isCreator) {
-      return res.status(403).json({
-        success: false,
-        message: 'Not authorized to delete this expense'
-      });
-    }
-    
-    // Delete splits
-    await Split.deleteMany({ expenseId: expense._id });
-    
-    // Delete expense
-    await Expense.findByIdAndDelete(req.params.id);
-    
-    // Log activity
-    await ActivityLog.logActivity({
-      userId: req.user._id,
-      groupId: expense.groupId,
-      action: 'expense_deleted',
-      details: {
-        expenseId: expense._id,
-        description: expense.description,
-        amount: parseFloat(expense.amount.toString())
-      },
-      ipAddress: req.ip,
-      userAgent: req.get('User-Agent')
-    });
-    
-    res.status(200).json({
-      success: true,
-      message: 'Expense deleted successfully'
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+router.delete('/:id', validate(schemas.objectId, 'params'), expenseController.deleteExpense);
 
 // @desc    Upload Excel file with expenses
 // @route   POST /api/expenses/:groupId/upload
@@ -501,6 +229,66 @@ router.post('/:groupId/upload',
           console.error('Error deleting uploaded file:', unlinkError);
         }
       }
+      next(error);
+    }
+  }
+);
+
+// @desc    Download Excel template for expenses
+// @route   GET /api/expenses/:groupId/download-template
+// @access  Private
+router.get('/:groupId/download-template',
+  validate(schemas.objectId, 'params'),
+  async (req, res, next) => {
+    try {
+      const { groupId } = req.params;
+      
+      // Check if group exists and user is member
+      const group = await Group.findById(groupId);
+      if (!group) {
+        return res.status(404).json({
+          success: false,
+          message: 'Group not found'
+        });
+      }
+      
+      const isMember = await group.isMember(req.user._id);
+      if (!isMember) {
+        return res.status(403).json({
+          success: false,
+          message: 'Not authorized to download template for this group'
+        });
+      }
+      
+      // Create template data
+      const templateData = [
+        {
+          'description': 'Lunch at restaurant',
+          'amount': 50.00,
+          'currency': group.currency || 'USD',
+          'category': 'Food',
+          'payer_email': 'user@example.com',
+          'split_emails': 'user1@example.com,user2@example.com',
+          'note': 'Optional note'
+        }
+      ];
+      
+      // Create workbook
+      const workbook = XLSX.utils.book_new();
+      const worksheet = XLSX.utils.json_to_sheet(templateData);
+      XLSX.utils.book_append_sheet(workbook, worksheet, 'Expenses Template');
+      
+      // Generate filename
+      const filename = `expense_template_${group.title.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
+      
+      // Set headers for file download
+      res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+      res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+      
+      // Write workbook to response
+      const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
+      res.send(buffer);
+    } catch (error) {
       next(error);
     }
   }

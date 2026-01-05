@@ -45,9 +45,7 @@ function getHeaders(json = true) {
 // ✅ Check login (safe)
 function checkLogin(redirect = true) {
   loadAuth();
-
-
-
+  
   // small delay to avoid redirect loop during DOM load
   if (!token || !currentUser || !currentUser.id) {
     console.warn("🔒 Not authenticated");
@@ -58,7 +56,6 @@ function checkLogin(redirect = true) {
     }
     return false;
   }
-
   // ✅ all good
   return true;
 }

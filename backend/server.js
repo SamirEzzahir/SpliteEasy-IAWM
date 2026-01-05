@@ -22,6 +22,11 @@ const walletRoutes = require('./routes/wallets');
 const friendRoutes = require('./routes/friends');
 const activityRoutes = require('./routes/activity');
 const notificationRoutes = require('./routes/notifications');
+const incomeRoutes = require('./routes/incomes');
+const incomeTypeRoutes = require('./routes/incometype');
+const statsRoutes = require('./routes/stats');
+const transactionRoutes = require('./routes/transactions');
+const debtsLoansRoutes = require('./routes/debts-loans');
 
 const app = express();
 
@@ -32,13 +37,17 @@ connectDB();
 app.use(helmet());
 app.use(compression());
 
-// Rate limiting
+/* // Rate limiting - More permissive in development
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: 'Too many requests from this IP, please try again later.'
+  max: process.env.NODE_ENV === 'development' ? 1000 : 100, // Higher limit for development
+  message: 'Too many requests from this IP, please try again later.',
+  skip: (req) => {
+    // Skip rate limiting for preflight OPTIONS requests in development
+    return process.env.NODE_ENV === 'development' && req.method === 'OPTIONS';
+  }
 });
-app.use(limiter);
+app.use(limiter); */
 
 // CORS configuration - Permissive for development
 let corsOptions;
@@ -46,10 +55,24 @@ let corsOptions;
 if (process.env.NODE_ENV === 'development') {
   // Very permissive CORS for development
   corsOptions = {
-    origin: true, // Allow all origins
+    origin: function (origin, callback) {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin) return callback(null, true);
+      
+      // Allow all localhost and 127.0.0.1 origins
+      if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+        return callback(null, true);
+      }
+      
+      // Allow any other origin in development
+      return callback(null, true);
+    },
     credentials: true,
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept']
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'Origin', 'X-Requested-With', 'Accept', 'X-HTTP-Method-Override'],
+    exposedHeaders: ['Content-Length', 'X-Foo', 'X-Bar'],
+    preflightContinue: false,
+    optionsSuccessStatus: 200
   };
   console.log('🔓 Development mode: CORS allows all origins');
 } else {
@@ -72,6 +95,9 @@ if (process.env.NODE_ENV === 'development') {
 }
 
 app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly
+app.options('*', cors(corsOptions));
 
 // Body parsing middleware
 app.use(express.json({ limit: '10mb' }));
@@ -96,6 +122,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// CORS test endpoint
+app.get('/cors-test', (req, res) => {
+  res.status(200).json({
+    message: 'CORS is working!',
+    origin: req.headers.origin,
+    timestamp: new Date().toISOString()
+  });
+});
+
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/users', userRoutes);
@@ -106,6 +141,13 @@ app.use('/api/wallets', walletRoutes);
 app.use('/api/friends', friendRoutes);
 app.use('/api/activity', activityRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/Notifications', notificationRoutes); // Also handle capital N for compatibility
+app.use('/api/incomes', incomeRoutes);
+app.use('/api/incometype', incomeTypeRoutes);
+app.use('/api/incometype/', incomeTypeRoutes); // Handle trailing slash
+app.use('/api/stats', statsRoutes);
+app.use('/api/transactions', transactionRoutes);
+app.use('/api/debts-loans', debtsLoansRoutes);
 
 // 404 handler
 app.use('*', (req, res) => {
@@ -118,7 +160,7 @@ app.use('*', (req, res) => {
 // Error handling middleware
 app.use(errorHandler);
 
-const PORT = process.env.PORT || 8000;
+const PORT = process.env.PORT || 8001;
 
 const server = http.createServer(app);
 

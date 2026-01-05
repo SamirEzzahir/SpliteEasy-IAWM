@@ -136,12 +136,14 @@ friendSchema.statics.getUserFriends = async function(userId) {
     
     return {
       friendship_id: friendship._id,
-      id: friend._id,
+      user_id: friend._id,  // Changé de 'id' à 'user_id' pour correspondre au frontend
+      id: friend._id,       // Gardons aussi 'id' pour compatibilité
       username: friend.username,
       email: friend.email,
       firstName: friend.firstName,
       lastName: friend.lastName,
       profilePhoto: friend.profilePhoto,
+      phone: friend.phone || '',
       created_at: friendship.createdAt
     };
   });

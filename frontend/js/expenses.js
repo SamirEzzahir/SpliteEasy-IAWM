@@ -256,26 +256,30 @@ async function loadGroupInfo() {
 
 // Update wallets when payer changes
 function updateWalletsForPayer() {
-  const payerSelect = document.getElementById('expensePayer');
-  const walletSelect = document.getElementById('expenseWallet');
-  const walletSection = document.getElementById('walletSection');
+  const payerSelect = document.getElementById('addPayer') || document.getElementById('expensePayer');
+  const walletSelect = document.getElementById('addWallet') || document.getElementById('expenseWallet');
+  const walletSection = document.getElementById('walletSection') || document.getElementById('addWalletContainer');
 
-  if (!payerSelect || !walletSelect || !walletSection) return;
+  if (!payerSelect || !walletSelect) return;
 
   const selectedPayerId = payerSelect.value;
 
   if (!selectedPayerId) {
-    // Hide wallet section if no payer selected
-    walletSection.style.display = 'none';
+    // Hide wallet section if no payer selected (only if walletSection exists)
+    if (walletSection) {
+      walletSection.style.display = 'none';
+    }
     walletSelect.innerHTML = '<option value="">No wallet selected</option>';
     return;
   }
 
   // Get current user
   fetchCurrentUser().then(currentUser => {
-    if (currentUser && parseInt(selectedPayerId) === currentUser.id) {
-      // Show wallet section only for current user
-      walletSection.style.display = 'block';
+    if (currentUser && selectedPayerId === currentUser.id.toString()) {
+      // Show wallet section only for current user (only if walletSection exists)
+      if (walletSection) {
+        walletSection.style.display = 'block';
+      }
 
       // Filter wallets for the current user
       const currentUserWallets = userWallets.filter(wallet => wallet.user_id === currentUser.id);
@@ -292,15 +296,19 @@ function updateWalletsForPayer() {
 
       console.log(`✅ Updated wallets for current user:`, currentUserWallets.length);
     } else {
-      // Hide wallet section for other users
-      walletSection.style.display = 'none';
+      // Hide wallet section for other users (only if walletSection exists)
+      if (walletSection) {
+        walletSection.style.display = 'none';
+      }
       walletSelect.innerHTML = '<option value="">No wallet selected</option>';
       console.log(`✅ Hidden wallet section for other user: ${selectedPayerId}`);
     }
   }).catch(err => {
     console.error("❌ Error getting current user:", err);
-    // Hide wallet section on error
-    walletSection.style.display = 'none';
+    // Hide wallet section on error (only if walletSection exists)
+    if (walletSection) {
+      walletSection.style.display = 'none';
+    }
   });
 }
 
@@ -1080,7 +1088,11 @@ async function loadWallets() {
 async function fetchExpensesForGroup(groupId, limit = 20, offset = 0) {
   if (!groupId) return { expenses: [], total: 0, has_more: false };
 
-  const url = `${API_URL}/expenses/${groupId}?limit=${limit}&offset=${offset}`;
+  // Convert offset to page number (backend expects page-based pagination)
+  const page = Math.floor(offset / limit) + 1;
+  // Add cache-busting parameter to avoid 304 responses
+  const timestamp = Date.now();
+  const url = `${API_URL}/expenses/${groupId}?limit=${limit}&page=${page}&_t=${timestamp}`;
   const res = await fetch(url, { headers: getHeaders() });
 
   if (!res.ok) {
@@ -1088,8 +1100,23 @@ async function fetchExpensesForGroup(groupId, limit = 20, offset = 0) {
     return { expenses: [], total: 0, has_more: false };
   }
 
-  const data = await res.json();
-  return data;
+  const response = await res.json();
+  console.log("🔍 Raw API response:", response);
+  
+  // Handle backend response format: {success: true, data: {expenses, totalPages, currentPage, totalExpenses}}
+  if (response.success && response.data) {
+    const { expenses, totalPages, currentPage, totalExpenses } = response.data;
+    console.log("📊 Parsed data:", { expenses: expenses?.length, totalPages, currentPage, totalExpenses });
+    return {
+      expenses: expenses || [],
+      total: totalExpenses || 0,
+      has_more: currentPage < totalPages
+    };
+  }
+  
+  console.warn("⚠️ Unexpected response format:", response);
+  // Fallback for unexpected format
+  return { expenses: [], total: 0, has_more: false };
 }
 
 // -----------------------------
@@ -1805,8 +1832,8 @@ async function submitAddExpense() {
     const amount = parseFloat(document.getElementById("addAmount").value);
     const dateStr = document.getElementById("addDate").value;
     const timeStr = document.getElementById("addTime").value;
-    const payerId = parseInt(document.getElementById("addPayer").value);
-    const walletId = document.getElementById("addWallet").value ? parseInt(document.getElementById("addWallet").value) : null;
+    const payerId = document.getElementById("addPayer").value;
+    const walletId = document.getElementById("addWallet").value || null;
     const note = document.getElementById("addNote").value;
     const splitType = document.querySelector('input[name="addSplitType"]:checked').value;
 
@@ -1832,7 +1859,7 @@ async function submitAddExpense() {
     let splits = [];
     if (splitType === 'equal') {
       const checked = document.querySelectorAll("#addEqualSplitMembers input[type=checkbox]:checked");
-      const userIds = Array.from(checked).map(c => parseInt(c.value));
+      const userIds = Array.from(checked).map(c => c.value); // Keep as strings
       if (userIds.length === 0) return showError("Please select at least one member");
       const share = amount / userIds.length;
       splits = userIds.map(id => ({ user_id: id, share_amount: share }));
@@ -1845,7 +1872,7 @@ async function submitAddExpense() {
         if (val > 0) {
           totalPercent += val;
           const share = (amount * val) / 100;
-          splits.push({ user_id: parseInt(input.dataset.userId), share_amount: share });
+          splits.push({ user_id: input.dataset.userId, share_amount: share });
         }
       });
       if (Math.abs(totalPercent - 100) > 0.1) return showError(`Total percentage must be 100% (currently ${totalPercent.toFixed(1)}%)`);
@@ -1857,7 +1884,7 @@ async function submitAddExpense() {
         const val = parseFloat(input.value) || 0;
         if (val > 0) {
           totalSplit += val;
-          splits.push({ user_id: parseInt(input.dataset.userId), share_amount: val });
+          splits.push({ user_id: input.dataset.userId, share_amount: val });
         }
       });
       if (Math.abs(totalSplit - amount) > 0.01) return showError(`Total split amount (${totalSplit.toFixed(2)}) must match expense amount (${amount.toFixed(2)})`);
@@ -1866,13 +1893,13 @@ async function submitAddExpense() {
     if (splits.length === 0) return showError("Please assign splits to at least one member");
 
     const payload = {
-      group_id: parseInt(groupId),
+      group_id: groupId,
       payer_id: payerId,
       description,
       amount,
       currency: currentGroup?.currency || "MAD",
       category,
-      wallet_id: walletId,
+      wallet_id: walletId && walletId !== 'undefined' ? walletId : null,
       note,
       splits,
       created_at: createdAtISO
@@ -2365,7 +2392,7 @@ function renderMembersMobileCards(container, members) {
 async function addMemberFromModal(modal) {
   const selectedCards = modal.querySelectorAll(".friend-card.selected");
   if (!selectedCards.length) return alert("Please select a friend!");
-  const userIds = Array.from(selectedCards).map(card => parseInt(card.dataset.friendId));
+  const userIds = Array.from(selectedCards).map(card => card.dataset.friendId);
   const isAdmin = modal.querySelector("#is_admin")?.checked || false;
   const params = new URLSearchParams(window.location.search);
   const groupId = params.get("id");
@@ -2905,7 +2932,7 @@ async function submitEditExpense() {
   const dateStr = document.getElementById("editDate").value;
   const category = document.getElementById("editCategory").value;
   const note = document.getElementById("editNote").value;
-  const walletId = parseInt(document.getElementById("editWallet").value);
+  const walletId = document.getElementById("editWallet").value || null;
   const splitType = document.querySelector('input[name="splitType"]:checked').value;
 
   // Validation
@@ -2932,7 +2959,7 @@ async function submitEditExpense() {
 
   if (splitType === 'equal') {
     const checked = document.querySelectorAll("#equalSplitMembers input[type=checkbox]:checked");
-    const userIds = Array.from(checked).map(c => parseInt(c.value));
+    const userIds = Array.from(checked).map(c => c.value); // Keep as strings
     if (userIds.length === 0) return showError("Please select at least one member");
     const share = amount / userIds.length;
     splits = userIds.map(id => ({ user_id: id, share_amount: share }));
@@ -2946,7 +2973,7 @@ async function submitEditExpense() {
       if (val > 0) {
         totalPercent += val;
         const share = (amount * val) / 100;
-        splits.push({ user_id: parseInt(input.dataset.userId), share_amount: share });
+        splits.push({ user_id: input.dataset.userId, share_amount: share });
       }
     });
 
@@ -2960,7 +2987,7 @@ async function submitEditExpense() {
       const val = parseFloat(input.value) || 0;
       if (val > 0) {
         totalSplit += val;
-        splits.push({ user_id: parseInt(input.dataset.userId), share_amount: val });
+        splits.push({ user_id: input.dataset.userId, share_amount: val });
       }
     });
 

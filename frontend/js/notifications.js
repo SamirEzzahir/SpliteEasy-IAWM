@@ -55,6 +55,10 @@ class NotificationManager {
     connectWebSocket() {
         if (!this.currentUserId) return;
 
+        // TODO: Implement WebSocket server support
+        console.log("🔌 WebSocket notifications disabled - server implementation pending");
+        return;
+
         try {
             const wsUrl = `${API_URL.replace("http://", "ws://").replace("/api", "")}/api/notifications/ws/${this.currentUserId}`;
             console.log("🔌 Connecting to WebSocket:", wsUrl);
@@ -351,6 +355,23 @@ class NotificationManager {
         if (this.ws) {
             this.ws.close(1000, "Page unloading");
             this.ws = null;
+        }
+    }
+
+    clearNotifications() {
+        console.log("🧹 Clearing notifications");
+        this.notifications = [];
+        
+        // Clear notification badge if it exists
+        const badge = document.querySelector('.notification-badge');
+        if (badge) {
+            badge.style.display = 'none';
+        }
+        
+        // Clear notification dropdown if it exists
+        const dropdown = document.querySelector('.notification-dropdown');
+        if (dropdown) {
+            dropdown.innerHTML = '<div class="text-muted p-3">No new notifications</div>';
         }
     }
 }
