@@ -68,11 +68,8 @@ const createWallet = async (req, res, next) => {
       userAgent: req.get('User-Agent')
     });
     
-    res.status(201).json({
-      success: true,
-      message: 'Wallet created successfully',
-      data: { wallet }
-    });
+    // Return direct wallet object (like Python version)
+    res.status(201).json(wallet);
   } catch (error) {
     if (error.code === 11000) {
       return res.status(400).json({

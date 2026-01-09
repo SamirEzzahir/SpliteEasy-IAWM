@@ -95,8 +95,7 @@ const getUserGroups = async (req, res, next) => {
       membershipUpdatedAt: membership.updatedAt
     }));
     
-    const total = await Membership.countDocuments({ userId: req.user._id });
-    
+    // Return direct array (like Python version)
     res.status(200).json(groups);
   } catch (error) {
     next(error);

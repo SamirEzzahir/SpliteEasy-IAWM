@@ -411,7 +411,7 @@ async function renderGroupsList() {
     // Show loading state
     table.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center text-muted py-4">
+        <td colspan="6" class="text-center text-muted py-4">
           <div class="spinner-border text-primary" role="status">
             <span class="visually-hidden">Loading...</span>
           </div>
@@ -429,7 +429,7 @@ async function renderGroupsList() {
     if (!groups.length) {
       table.innerHTML = `
         <tr>
-          <td colspan="7" class="text-center text-muted py-5">
+          <td colspan="6" class="text-center text-muted py-5">
             <i class="bi bi-people fs-1 mb-3"></i>
             <h5>No groups yet</h5>
             <p>Create your first group to start splitting expenses!</p>
@@ -446,13 +446,11 @@ async function renderGroupsList() {
       const participants = (g.members_usernames || []).join(", ");
       const tr = document.createElement("tr");
       tr.innerHTML = `
-        <td>
-          <span class="badge bg-secondary">${g.id}</span>
-        </td>
+
         <td>
           <div class="d-flex align-items-center">
             <div class="group-avatar rounded-circle d-flex align-items-center justify-content-center me-2" 
-                 style="width: 32px; height: 32px;" data-color="${(g.id % 6) + 1}">
+                 style="width: 32px; height: 32px;" data-color="${(parseInt((g.id || "").slice(-1), 16) % 6) + 1}">
               ${(g.title || "").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase() || "G"}
             </div>
             <span class="fw-semibold">${safe(g.title)}</span>
@@ -463,18 +461,14 @@ async function renderGroupsList() {
         </td>
         <td>
           <div class="d-flex align-items-center">
-            <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center me-2" 
-                 style="width: 24px; height: 24px;">
-              <i class="bi bi-person" style="font-size: 0.75rem;"></i>
-            </div>
-            <span>${g.owner_username || "Unknown"}</span>
+            <span>${g.ownerId?.username || g.owner_username || "Unknown"}</span>
           </div>
         </td>
         <td>
           <span class="badge bg-success">${g.members_usernames?.length || 0} members</span>
         </td>
         <td>
-          <small class="text-muted">${getRelativeTime(g.created_at)}</small>
+          <small class="text-muted">${getRelativeTime(g.createdAt || g.created_at)}</small>
         </td>
         <td>
           <div class="btn-group" role="group">
@@ -503,7 +497,7 @@ async function renderGroupsList() {
     console.error("❌ Error rendering groups list:", err);
     table.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center text-danger py-4">
+        <td colspan="6" class="text-center text-danger py-4">
           <i class="bi bi-exclamation-triangle fs-1 mb-3"></i>
           <h5>Error loading groups</h5>
           <p>${err.message}</p>
@@ -574,7 +568,7 @@ async function renderGroupsMobileCards() {
       // Add click handler
       card.addEventListener('click', () => openGroup(g.id));
 
-      const gradientIndex = (g.id % 6) + 1;
+      const gradientIndex = (parseInt((g.id || "").slice(-1), 16) % 6) + 1;
 
       card.innerHTML = `
   <div class="card-body d-flex align-items-center">
@@ -584,7 +578,7 @@ async function renderGroupsMobileCards() {
     </div>
     <div class="flex-grow-1">
       <h6 class="mb-1 fw-bold">${safe(g.title)}</h6>
-      <small class="text-muted">👑 ${g.owner_username || "Unknown"}</small><br>
+      <small class="text-muted">👑 ${g.ownerId?.username || g.owner_username || "Unknown"}</small><br>
       <small class="text-muted">👥 ${participants}</small><br>
       <small class="text-muted">💰 ${recent}</small>
     </div>
@@ -664,7 +658,7 @@ function renderFilteredGroupsTable() {
   if (!filteredGroups.length) {
     table.innerHTML = `
       <tr>
-        <td colspan="7" class="text-center text-muted py-4">
+        <td colspan="6" class="text-center text-muted py-4">
           <i class="bi bi-search fs-1 mb-3"></i>
           <h5>No groups found</h5>
           <p>Try adjusting your search or filter criteria</p>
@@ -678,11 +672,11 @@ function renderFilteredGroupsTable() {
     const participants = (g.members_usernames || []).join(", ");
     const tr = document.createElement("tr");
     tr.innerHTML = `
-      <td><span class="badge bg-secondary">${g.id}</span></td>
+
       <td>
         <div class="d-flex align-items-center">
           <div class="group-avatar rounded-circle d-flex align-items-center justify-content-center me-2" 
-               style="width: 32px; height: 32px;" data-color="${(g.id % 6) + 1}">
+               style="width: 32px; height: 32px;" data-color="${(parseInt((g.id || "").slice(-1), 16) % 6) + 1}">
             ${(g.title || "").split(" ").map(p => p[0]).slice(0, 2).join("").toUpperCase() || "G"}
           </div>
           <span class="fw-semibold">${safe(g.title)}</span>
@@ -694,14 +688,14 @@ function renderFilteredGroupsTable() {
           <div class="rounded-circle bg-warning text-white d-flex align-items-center justify-content-center me-2" 
                style="width: 24px; height: 24px;">
             <i class="bi bi-person" style="font-size: 0.75rem;"></i>
-          </div>
-          <span>${g.owner_username || "Unknown"}</span>
+        </div>
+          <span>${g.ownerId?.username || g.owner_username || "Unknown"}</span>
         </div>
       </td>
       <td>
         <span class="badge bg-success">${g.members_usernames?.length || 0} members</span>
       </td>
-      <td><small class="text-muted">${getRelativeTime(g.created_at)}</small></td>
+      <td><small class="text-muted">${getRelativeTime(g.createdAt || g.created_at)}</small></td>
       <td>
         <div class="btn-group" role="group">
           <button class="btn btn-sm btn-primary" onclick="openGroup('${g.id}')" title="Open Group">
@@ -759,7 +753,7 @@ function renderFilteredGroupsMobile() {
 
     card.addEventListener('click', () => openGroup(g.id));
 
-    const gradientIndex = (g.id % 6) + 1;
+    const gradientIndex = (parseInt((g.id || "").slice(-1), 16) % 6) + 1;
 
     card.innerHTML = `
       <div class="card-body d-flex align-items-center">
@@ -769,7 +763,7 @@ function renderFilteredGroupsMobile() {
         </div>
         <div class="flex-grow-1">
           <h6 class="mb-1 fw-bold">${safe(g.title)}</h6>
-          <small class="text-muted">👑 ${g.owner_username || "Unknown"}</small><br>
+          <small class="text-muted">👑 ${g.ownerId?.username || g.owner_username || "Unknown"}</small><br>
           <small class="text-muted">👥 ${participants}</small><br>
           <small class="text-muted">💰 ${recent}</small>
         </div>
@@ -900,7 +894,7 @@ async function deleteGroup(groupId) {
 
     if (!res.ok) {
       const errorData = await res.json();
-      throw new Error(errorData.detail || "Failed to delete group");
+      throw new Error(errorData.message || errorData.detail || "Failed to delete group");
     }
 
     console.log("✅ Group deleted successfully");
@@ -1061,7 +1055,7 @@ async function saveGroupChanges(event) {
 
     if (!res.ok) {
       const errorData = await res.json();
-      throw new Error(errorData.detail || "Failed to update group");
+      throw new Error(errorData.message || errorData.detail || "Failed to update group");
     }
 
     const updatedGroup = await res.json();
@@ -1092,8 +1086,7 @@ async function loadWalletsForGroups() {
   try {
     const res = await fetch(`${API_URL}/wallets`, { headers: getHeaders() });
     if (!res.ok) return [];
-    const response = await res.json();
-    const wallets = response.data?.wallets || [];
+    const wallets = await res.json(); // Direct array response
 
     const walletSelect = document.getElementById('expenseWallet');
     if (walletSelect) {
@@ -1118,8 +1111,7 @@ async function loadGroupsForExpense() {
     const res = await fetch(`${API_URL}/groups`, {
       headers: getHeaders()
     });
-    const response = await res.json();
-    const groups = response.data?.groups || [];
+    const groups = await res.json(); // Direct array response
 
     const groupSelect = document.getElementById('groupsListForExpenses');
     if (groupSelect) {
@@ -1516,9 +1508,8 @@ async function addExpenseModalSubmit() {
       return;
     }
 
-    // Get selected members
     const checked = document.querySelectorAll("#membersListForGroups input[type=checkbox]:checked");
-    const selectedMembers = Array.from(checked).map(c => parseInt(c.value));
+    const selectedMembers = Array.from(checked).map(c => c.value);
     if (selectedMembers.length === 0) {
       showError("Please select at least one member");
       return;
@@ -1540,7 +1531,7 @@ async function addExpenseModalSubmit() {
       currency: "MAD",
       category: category,
       wallet_id: walletId || null,
-      split_type: "equal",
+      splitType: "equal",
       created_at: expenseDate.toISOString(),
       splits
     };

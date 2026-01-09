@@ -16,8 +16,8 @@ const createExpense = async (req, res, next) => {
     const groupId = req.body.groupId || req.body.group_id;
     const payerId = req.body.payerId || req.body.payer_id || req.user._id;
     const walletId = req.body.walletId || req.body.wallet_id;
-    const { description, amount, currency, category, splitType, note } = req.body;
-    
+    const { description, amount, currency, category, splitType, note, created_at } = req.body;
+
     // Handle splits - convert snake_case to camelCase if needed
     let splits = req.body.splits;
     if (splits && splits.length > 0) {
@@ -26,7 +26,7 @@ const createExpense = async (req, res, next) => {
         shareAmount: split.shareAmount || split.share_amount
       }));
     }
-    
+
     // Check if group exists and user is member
     const group = await Group.findById(groupId);
     if (!group) {
@@ -35,7 +35,7 @@ const createExpense = async (req, res, next) => {
         message: 'Group not found'
       });
     }
-    
+
     const isMember = await group.isMember(req.user._id);
     if (!isMember) {
       return res.status(403).json({
@@ -43,9 +43,8 @@ const createExpense = async (req, res, next) => {
         message: 'Not authorized to add expenses to this group'
       });
     }
-    
-    // Create expense
-    const expense = await Expense.create({
+
+    const expenseData = {
       groupId,
       payerId,
       addedBy: req.user._id,
@@ -56,8 +55,15 @@ const createExpense = async (req, res, next) => {
       walletId,
       splitType,
       note
-    });
-    
+    };
+
+    // Use provided date if available
+    if (created_at) {
+      expenseData.createdAt = created_at;
+    }
+
+    const expense = await Expense.create(expenseData);
+
     // Handle splits
     let expenseSplits;
     if (splits && splits.length > 0) {
@@ -76,24 +82,28 @@ const createExpense = async (req, res, next) => {
       const memberIds = members.map(m => m.userId._id);
       expenseSplits = expense.calculateEqualSplits(memberIds);
     }
-    
+
     // Create splits
     await Split.createSplits(expense._id, expenseSplits);
-    
+
     // Create notifications
     await Notification.createExpenseNotification(expense, 'added');
-    
+
     // Get populated expense
     const populatedExpense = await Expense.findById(expense._id)
       .populate('payerId', 'firstName lastName username')
       .populate('addedBy', 'firstName lastName username')
       .populate('walletId', 'name category')
       .populate('splits');
-    
+
+    // Return with created_at for consistency
+    const responseExpense = populatedExpense.toObject();
+    responseExpense.created_at = responseExpense.createdAt;
+
     res.status(201).json({
       success: true,
       message: 'Expense created successfully',
-      data: { expense: populatedExpense }
+      data: { expense: responseExpense }
     });
   } catch (error) {
     next(error);
@@ -109,7 +119,7 @@ const getGroupExpenses = async (req, res, next) => {
   try {
     const { groupId } = req.params;
     const { page, limit, category, payerId, startDate, endDate, sortBy, sortOrder } = req.query;
-    
+
     // Check if group exists and user is member
     const group = await Group.findById(groupId);
     if (!group) {
@@ -118,7 +128,7 @@ const getGroupExpenses = async (req, res, next) => {
         message: 'Group not found'
       });
     }
-    
+
     const isMember = await group.isMember(req.user._id);
     if (!isMember) {
       return res.status(403).json({
@@ -126,7 +136,7 @@ const getGroupExpenses = async (req, res, next) => {
         message: 'Not authorized to view expenses for this group'
       });
     }
-    
+
     const result = await Expense.getGroupExpenses(groupId, {
       page: parseInt(page),
       limit: parseInt(limit),
@@ -137,15 +147,16 @@ const getGroupExpenses = async (req, res, next) => {
       sortBy,
       sortOrder
     });
-    
+
     // Transform expenses to match frontend expectations
     const transformedExpenses = result.expenses.map(expense => ({
       ...expense.toObject(),
       payer_id: expense.payerId._id,
       payer_username: expense.payerId.username,
-      id: expense._id
+      id: expense._id,
+      created_at: expense.createdAt // Explicitly map createdAt to created_at
     }));
-    
+
     res.status(200).json({
       success: true,
       data: {
@@ -176,14 +187,14 @@ const getExpenseById = async (req, res, next) => {
           select: 'firstName lastName username profilePhoto'
         }
       });
-    
+
     if (!expense) {
       return res.status(404).json({
         success: false,
         message: 'Expense not found'
       });
     }
-    
+
     // Check if user is member of the group
     const group = await Group.findById(expense.groupId);
     const isMember = await group.isMember(req.user._id);
@@ -193,7 +204,7 @@ const getExpenseById = async (req, res, next) => {
         message: 'Not authorized to view this expense'
       });
     }
-    
+
     res.status(200).json({
       success: true,
       data: { expense }
@@ -211,42 +222,42 @@ const getExpenseById = async (req, res, next) => {
 const updateExpense = async (req, res, next) => {
   try {
     const expense = await Expense.findById(req.params.id);
-    
+
     if (!expense) {
       return res.status(404).json({
         success: false,
         message: 'Expense not found'
       });
     }
-    
+
     // Check if user can update (added by user or group admin)
     const group = await Group.findById(expense.groupId);
     const isAdmin = await group.isAdmin(req.user._id);
     const isCreator = expense.addedBy.toString() === req.user._id.toString();
-    
+
     if (!isAdmin && !isCreator) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to update this expense'
       });
     }
-    
+
     const allowedFields = ['description', 'amount', 'currency', 'category', 'walletId', 'splitType', 'note', 'splits'];
     const updates = {};
-    
+
     allowedFields.forEach(field => {
       if (req.body[field] !== undefined) {
         updates[field] = req.body[field];
       }
     });
-    
+
     // Update expense
     const updatedExpense = await Expense.findByIdAndUpdate(
       req.params.id,
       updates,
       { new: true, runValidators: true }
     );
-    
+
     // Handle splits update
     if (req.body.splits) {
       if (!updatedExpense.validateSplits(req.body.splits)) {
@@ -257,17 +268,17 @@ const updateExpense = async (req, res, next) => {
       }
       await Split.createSplits(updatedExpense._id, req.body.splits);
     }
-    
+
     // Create notifications
     await Notification.createExpenseNotification(updatedExpense, 'updated');
-    
+
     // Get populated expense
     const populatedExpense = await Expense.findById(updatedExpense._id)
       .populate('payerId', 'firstName lastName username')
       .populate('addedBy', 'firstName lastName username')
       .populate('walletId', 'name category')
       .populate('splits');
-    
+
     res.status(200).json({
       success: true,
       message: 'Expense updated successfully',
@@ -286,32 +297,32 @@ const updateExpense = async (req, res, next) => {
 const deleteExpense = async (req, res, next) => {
   try {
     const expense = await Expense.findById(req.params.id);
-    
+
     if (!expense) {
       return res.status(404).json({
         success: false,
         message: 'Expense not found'
       });
     }
-    
+
     // Check if user can delete (added by user or group admin)
     const group = await Group.findById(expense.groupId);
     const isAdmin = await group.isAdmin(req.user._id);
     const isCreator = expense.addedBy.toString() === req.user._id.toString();
-    
+
     if (!isAdmin && !isCreator) {
       return res.status(403).json({
         success: false,
         message: 'Not authorized to delete this expense'
       });
     }
-    
+
     // Delete splits
     await Split.deleteMany({ expenseId: expense._id });
-    
+
     // Delete expense
     await Expense.findByIdAndDelete(req.params.id);
-    
+
     // Log activity
     await ActivityLog.logActivity({
       userId: req.user._id,
@@ -325,7 +336,7 @@ const deleteExpense = async (req, res, next) => {
       ipAddress: req.ip,
       userAgent: req.get('User-Agent')
     });
-    
+
     res.status(200).json({
       success: true,
       message: 'Expense deleted successfully'

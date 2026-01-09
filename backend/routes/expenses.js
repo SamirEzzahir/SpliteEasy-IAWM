@@ -45,7 +45,7 @@ const upload = multer({
       'application/vnd.ms-excel',
       'text/csv'
     ];
-    
+
     if (allowedTypes.includes(file.mimetype)) {
       cb(null, true);
     } else {
@@ -62,22 +62,23 @@ router.post('/', validate(schemas.expenseCreate), expenseController.createExpens
 // @desc    Get group expenses
 // @route   GET /api/expenses/:groupId
 // @access  Private
-router.get('/:groupId', 
+router.get('/:groupId',
   validate(schemas.groupIdParam, 'params'),
   validate(schemas.pagination, 'query'),
   expenseController.getGroupExpenses
 );
 
 // @desc    Get expense by ID
+// @desc    Get expense by ID
 // @route   GET /api/expenses/exp/:id
 // @access  Private
-router.get('/exp/:id', validate(schemas.objectId, 'params'), expenseController.getExpenseById);
+router.get('/exp/:id', validate(schemas.idParam, 'params'), expenseController.getExpenseById);
 
 // @desc    Update expense
 // @route   PUT /api/expenses/:id
 // @access  Private
 router.put('/:id',
-  validate(schemas.objectId, 'params'),
+  validate(schemas.idParam, 'params'),
   validate(schemas.expenseUpdate),
   expenseController.updateExpense
 );
@@ -85,25 +86,25 @@ router.put('/:id',
 // @desc    Delete expense
 // @route   DELETE /api/expenses/:id
 // @access  Private
-router.delete('/:id', validate(schemas.objectId, 'params'), expenseController.deleteExpense);
+router.delete('/:id', validate(schemas.idParam, 'params'), expenseController.deleteExpense);
 
 // @desc    Upload Excel file with expenses
 // @route   POST /api/expenses/:groupId/upload
 // @access  Private
 router.post('/:groupId/upload',
-  validate(schemas.objectId, 'params'),
+  validate(schemas.groupIdParam, 'params'),
   upload.single('file'),
   async (req, res, next) => {
     try {
       const { groupId } = req.params;
-      
+
       if (!req.file) {
         return res.status(400).json({
           success: false,
           message: 'No file uploaded'
         });
       }
-      
+
       // Check if group exists and user is member
       const group = await Group.findById(groupId);
       if (!group) {
@@ -112,7 +113,7 @@ router.post('/:groupId/upload',
           message: 'Group not found'
         });
       }
-      
+
       const isMember = await group.isMember(req.user._id);
       if (!isMember) {
         return res.status(403).json({
@@ -120,46 +121,46 @@ router.post('/:groupId/upload',
           message: 'Not authorized to upload expenses to this group'
         });
       }
-      
+
       // Read Excel file
       const workbook = XLSX.readFile(req.file.path);
       const sheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[sheetName];
       const data = XLSX.utils.sheet_to_json(worksheet);
-      
+
       const results = {
         successful: 0,
         failed: 0,
         errors: []
       };
-      
+
       // Get group members for validation
       const members = await Membership.getGroupMembers(groupId);
       const memberEmails = members.map(m => m.userId.email.toLowerCase());
-      
+
       // Process each row
       for (let i = 0; i < data.length; i++) {
         try {
           const row = data[i];
-          
+
           // Validate required fields
           if (!row.description || !row.amount || !row.payer_email) {
             results.failed++;
             results.errors.push(`Row ${i + 2}: Missing required fields (description, amount, payer_email)`);
             continue;
           }
-          
+
           // Find payer
-          const payerMember = members.find(m => 
+          const payerMember = members.find(m =>
             m.userId.email.toLowerCase() === row.payer_email.toLowerCase()
           );
-          
+
           if (!payerMember) {
             results.failed++;
             results.errors.push(`Row ${i + 2}: Payer email not found in group members`);
             continue;
           }
-          
+
           // Create expense
           const expense = await Expense.create({
             groupId,
@@ -171,22 +172,22 @@ router.post('/:groupId/upload',
             category: row.category || 'General',
             note: row.note || ''
           });
-          
+
           // Handle splits (equal split if not specified)
           let expenseSplits;
           if (row.split_emails) {
             const splitEmails = row.split_emails.split(',').map(email => email.trim().toLowerCase());
-            const splitMembers = members.filter(m => 
+            const splitMembers = members.filter(m =>
               splitEmails.includes(m.userId.email.toLowerCase())
             );
-            
+
             if (splitMembers.length === 0) {
               results.failed++;
               results.errors.push(`Row ${i + 2}: No valid split members found`);
               await Expense.findByIdAndDelete(expense._id);
               continue;
             }
-            
+
             const splitAmount = parseFloat(row.amount) / splitMembers.length;
             expenseSplits = splitMembers.map(member => ({
               userId: member.userId._id,
@@ -197,24 +198,24 @@ router.post('/:groupId/upload',
             const memberIds = members.map(m => m.userId._id);
             expenseSplits = expense.calculateEqualSplits(memberIds);
           }
-          
+
           // Create splits
           await Split.createSplits(expense._id, expenseSplits);
-          
+
           results.successful++;
         } catch (error) {
           results.failed++;
           results.errors.push(`Row ${i + 2}: ${error.message}`);
         }
       }
-      
+
       // Clean up uploaded file
       try {
         await fs.unlink(req.file.path);
       } catch (error) {
         console.error('Error deleting uploaded file:', error);
       }
-      
+
       res.status(200).json({
         success: true,
         message: 'File processed successfully',
@@ -238,11 +239,11 @@ router.post('/:groupId/upload',
 // @route   GET /api/expenses/:groupId/download-template
 // @access  Private
 router.get('/:groupId/download-template',
-  validate(schemas.objectId, 'params'),
+  validate(schemas.groupIdParam, 'params'),
   async (req, res, next) => {
     try {
       const { groupId } = req.params;
-      
+
       // Check if group exists and user is member
       const group = await Group.findById(groupId);
       if (!group) {
@@ -251,7 +252,7 @@ router.get('/:groupId/download-template',
           message: 'Group not found'
         });
       }
-      
+
       const isMember = await group.isMember(req.user._id);
       if (!isMember) {
         return res.status(403).json({
@@ -259,7 +260,7 @@ router.get('/:groupId/download-template',
           message: 'Not authorized to download template for this group'
         });
       }
-      
+
       // Create template data
       const templateData = [
         {
@@ -272,19 +273,19 @@ router.get('/:groupId/download-template',
           'note': 'Optional note'
         }
       ];
-      
+
       // Create workbook
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.json_to_sheet(templateData);
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Expenses Template');
-      
+
       // Generate filename
       const filename = `expense_template_${group.title.replace(/[^a-zA-Z0-9]/g, '_')}.xlsx`;
-      
+
       // Set headers for file download
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      
+
       // Write workbook to response
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
       res.send(buffer);
@@ -298,12 +299,12 @@ router.get('/:groupId/download-template',
 // @route   GET /api/expenses/:groupId/download
 // @access  Private
 router.get('/:groupId/download',
-  validate(schemas.objectId, 'params'),
+  validate(schemas.groupIdParam, 'params'),
   async (req, res, next) => {
     try {
       const { groupId } = req.params;
       const { startDate, endDate } = req.query;
-      
+
       // Check if group exists and user is member
       const group = await Group.findById(groupId);
       if (!group) {
@@ -312,7 +313,7 @@ router.get('/:groupId/download',
           message: 'Group not found'
         });
       }
-      
+
       const isMember = await group.isMember(req.user._id);
       if (!isMember) {
         return res.status(403).json({
@@ -320,21 +321,21 @@ router.get('/:groupId/download',
           message: 'Not authorized to download expenses for this group'
         });
       }
-      
+
       // Get expenses
       const result = await Expense.getGroupExpenses(groupId, {
         startDate,
         endDate,
         limit: 10000 // Large limit to get all expenses
       });
-      
+
       // Prepare data for Excel
       const excelData = [];
-      
+
       for (const expense of result.expenses) {
         const splits = await Split.find({ expenseId: expense._id })
           .populate('userId', 'firstName lastName email');
-        
+
         excelData.push({
           'Date': expense.createdAt.toISOString().split('T')[0],
           'Description': expense.description,
@@ -349,19 +350,19 @@ router.get('/:groupId/download',
           'Note': expense.note || ''
         });
       }
-      
+
       // Create workbook
       const workbook = XLSX.utils.book_new();
       const worksheet = XLSX.utils.json_to_sheet(excelData);
       XLSX.utils.book_append_sheet(workbook, worksheet, 'Expenses');
-      
+
       // Generate filename
       const filename = `${group.title.replace(/[^a-zA-Z0-9]/g, '_')}_expenses_${new Date().toISOString().split('T')[0]}.xlsx`;
-      
+
       // Set headers for file download
       res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
       res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-      
+
       // Write workbook to response
       const buffer = XLSX.write(workbook, { type: 'buffer', bookType: 'xlsx' });
       res.send(buffer);

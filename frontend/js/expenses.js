@@ -1102,7 +1102,7 @@ async function fetchExpensesForGroup(groupId, limit = 20, offset = 0) {
 
   const response = await res.json();
   console.log("🔍 Raw API response:", response);
-  
+
   // Handle backend response format: {success: true, data: {expenses, totalPages, currentPage, totalExpenses}}
   if (response.success && response.data) {
     const { expenses, totalPages, currentPage, totalExpenses } = response.data;
@@ -1113,7 +1113,7 @@ async function fetchExpensesForGroup(groupId, limit = 20, offset = 0) {
       has_more: currentPage < totalPages
     };
   }
-  
+
   console.warn("⚠️ Unexpected response format:", response);
   // Fallback for unexpected format
   return { expenses: [], total: 0, has_more: false };
@@ -1414,8 +1414,8 @@ function renderDesktopTable(items, user, currentGroup = null) {
       const isPayer = expense.payer_id === user.id;
       const isGroupOwner = currentGroup && currentGroup.owner_id === user.id;
       const isOwner = isPayer || isGroupOwner;
-      const userSplit = expense.splits?.find(s => s.user_id === user.id);
-      const userShare = userSplit ? userSplit.share_amount : 0;
+      const userSplit = expense.splits?.find(s => (s.userId._id || s.userId || s.user_id) === user.id);
+      const userShare = userSplit ? (userSplit.shareAmount || userSplit.share_amount) : 0;
 
       // Calculate if user lent money (paid more than share) or owes money (paid less than share)
       // Note: userPaid should only be based on isPayer, not isOwner (group owner didn't pay)
@@ -1526,8 +1526,8 @@ function renderMobileCards(items, user, currentGroup = null) {
       const isPayer = expense.payer_id === user.id;
       const isGroupOwner = currentGroup && currentGroup.owner_id === user.id;
       const isOwner = isPayer || isGroupOwner;
-      const userSplit = expense.splits?.find(s => s.user_id === user.id);
-      const userShare = userSplit ? userSplit.share_amount : 0;
+      const userSplit = expense.splits?.find(s => (s.userId._id || s.userId || s.user_id) === user.id);
+      const userShare = userSplit ? (userSplit.shareAmount || userSplit.share_amount) : 0;
 
       // Calculate if user lent money (paid more than share) or owes money (paid less than share)
       // Note: userPaid should only be based on isPayer, not isOwner (group owner didn't pay)
@@ -1747,6 +1747,202 @@ function showExpenseDetailModal(expense, user) {
       console.error("Error showing expense detail modal:", err);
     }
   }, 100);
+}
+
+// -----------------------------
+// Handle Edit Expense
+// -----------------------------
+async function handleEditExpense(expenseId) {
+  try {
+    console.log("📝 Editing expense:", expenseId);
+
+    // Find expense locally first
+    let expense = allExpenses.find(e => e.id === expenseId);
+
+    if (!expense) {
+      // Try to fetch it if not found in local list
+      try {
+        const res = await fetch(`${API_URL}/expenses/exp/${expenseId}`, { headers: getHeaders() });
+        if (res.ok) {
+          expense = await res.json();
+        }
+      } catch (e) {
+        console.error(e);
+      }
+    }
+
+    if (!expense) {
+      return showError("Expense not found");
+    }
+
+    openEditExpenseModalWithData(expense);
+  } catch (err) {
+    console.error("Error handling edit expense:", err);
+    showError("Failed to open edit modal");
+  }
+}
+
+async function openEditExpenseModalWithData(expense) {
+  try {
+    const modal = document.getElementById('editExpenseModal');
+    if (!modal) return;
+
+    // Set simple fields
+    const idField = document.getElementById('editExpenseId');
+    if (idField) idField.value = expense.id;
+
+    const descField = document.getElementById('editDescription');
+    if (descField) descField.value = expense.description;
+
+    const amountField = document.getElementById('editAmount');
+    if (amountField) amountField.value = parseFloat(expense.amount);
+
+    // Date
+    const dateField = document.getElementById('editDate');
+    if (dateField && expense.created_at) {
+      const dateObj = new Date(expense.created_at);
+      const year = dateObj.getFullYear();
+      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+      const day = String(dateObj.getDate()).padStart(2, '0');
+      dateField.value = `${year}-${month}-${day}`;
+    }
+
+    const catField = document.getElementById('editCategory');
+    if (catField) catField.value = expense.category || '';
+
+    const noteField = document.getElementById('editNote');
+    if (noteField) noteField.value = expense.note || '';
+
+    // Load wallets for dropdown
+    const wallets = await loadWallets();
+    const walletSelect = document.getElementById('editWallet');
+    if (walletSelect) {
+      walletSelect.innerHTML = '<option value="">No wallet selected</option>';
+      wallets.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w._id || w.id;
+        opt.textContent = w.name;
+        walletSelect.appendChild(opt);
+      });
+      if (expense.wallet_id) {
+        walletSelect.value = expense.wallet_id;
+      } else if (expense.walletId) {
+        walletSelect.value = expense.walletId._id || expense.walletId;
+      }
+    }
+
+    // Populate split section logic
+    const members = await fetchMembers();
+    const currentSplits = expense.splits || [];
+    const splitType = expense.splitType || 'equal';
+
+    // Set split type radio
+    const radio = document.querySelector(`input[name="splitType"][value="${splitType}"]`);
+    if (radio) radio.checked = true;
+
+    // Populate Equal Split Section
+    const equalContainer = document.getElementById('equalSplitMembers');
+    if (equalContainer) {
+      equalContainer.innerHTML = '';
+      members.forEach(m => {
+        // Check if this member is in current splits
+        const isSelected = currentSplits.some(s => (s.userId?._id || s.userId || s.user_id) === m.user_id);
+
+        const div = document.createElement('div');
+        div.className = 'form-check';
+        div.innerHTML = `
+          <input class="form-check-input" type="checkbox" value="${m.user_id}" id="edit_split_equal_${m.user_id}" ${isSelected ? 'checked' : ''}>
+          <label class="form-check-label" for="edit_split_equal_${m.user_id}">
+            ${m.username}
+          </label>
+        `;
+        equalContainer.appendChild(div);
+      });
+    }
+
+    // Toggle views
+    ['equal', 'percentage', 'custom'].forEach(type => {
+      const view = document.getElementById(`${type}SplitView`);
+      if (view) {
+        view.classList.toggle('d-none', type !== splitType);
+        view.classList.toggle('d-flex', type === splitType);
+      }
+    });
+
+    // Handle Delete Button
+    const deleteBtn = document.getElementById('deleteExpenseBtn');
+    if (deleteBtn) {
+      deleteBtn.onclick = () => deleteExpense(expense.id);
+    }
+
+    // Show modal
+    const bsModal = new bootstrap.Modal(modal);
+    bsModal.show();
+
+  } catch (err) {
+    console.error("Error opening edit modal with data:", err);
+    showError("Failed to populate edit form");
+  }
+}
+
+async function submitEditExpense() {
+  try {
+    const expenseId = document.getElementById('editExpenseId').value;
+    const description = document.getElementById('editDescription').value;
+    const amount = parseFloat(document.getElementById('editAmount').value);
+    const date = document.getElementById('editDate').value;
+    const category = document.getElementById('editCategory').value;
+    const walletId = document.getElementById('editWallet').value;
+    const note = document.getElementById('editNote').value;
+    const splitType = document.querySelector('input[name="splitType"]:checked').value;
+
+    if (!description || !amount || !date) {
+      return showError("Please fill in required fields");
+    }
+
+    let splits = [];
+    if (splitType === 'equal') {
+      const checked = document.querySelectorAll('#equalSplitMembers input:checked');
+      const ids = Array.from(checked).map(c => c.value);
+      if (ids.length === 0) return showError("Select at least one member");
+      const share = amount / ids.length;
+      splits = ids.map(id => ({ user_id: id, share_amount: share }));
+    }
+
+    // Minimal payload for now
+    const payload = {
+      description,
+      amount,
+      category,
+      wallet_id: walletId || null,
+      note,
+      splitType,
+      splits
+    };
+
+    const res = await fetch(`${API_URL}/expenses/${expenseId}`, {
+      method: 'PUT',
+      headers: getHeaders(),
+      body: JSON.stringify(payload)
+    });
+
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Failed to update expense");
+    }
+
+    showSuccess("Expense updated!");
+
+    const modalEl = document.getElementById('editExpenseModal');
+    const modal = bootstrap.Modal.getInstance(modalEl);
+    if (modal) modal.hide();
+
+    loadExpenses(true);
+
+  } catch (err) {
+    console.error(err);
+    showError(err.message);
+  }
 }
 
 // -----------------------------
@@ -2853,196 +3049,8 @@ async function fetchExpenseById(expenseId) {
   return await res.json();
 }
 
-async function handleEditExpense(expenseId) {
-  try {
-    const expense = await fetchExpenseById(expenseId);
-    console.log("res test ", expense);
+// Duplicate edit logic removed
 
-    // Fill main fields
-    document.getElementById("editExpenseId").value = expense.id;
-    document.getElementById("editDescription").value = expense.description;
-    document.getElementById("editAmount").value = expense.amount;
-    document.getElementById("editCategory").value = expense.category || "";
-    document.getElementById("editNote").value = expense.note || "";
-    document.getElementById("editWallet").value = expense.wallet_id || "";
-
-    // Update currency symbol
-    const editCurrencySymbol = document.getElementById('editCurrencySymbol');
-    if (editCurrencySymbol) {
-      editCurrencySymbol.textContent = expense.currency || 'MAD';
-    }
-
-    // Fill Date (Format YYYY-MM-DD)
-    const dateInput = document.getElementById("editDate");
-    if (dateInput && expense.created_at) {
-      const dateObj = new Date(expense.created_at);
-      const year = dateObj.getFullYear();
-      const month = String(dateObj.getMonth() + 1).padStart(2, '0');
-      const day = String(dateObj.getDate()).padStart(2, '0');
-      dateInput.value = `${year}-${month}-${day}`;
-      dateInput.dataset.originalTime = `${String(dateObj.getHours()).padStart(2, '0')}:${String(dateObj.getMinutes()).padStart(2, '0')}`;
-    }
-
-    // Setup Delete Button
-    const deleteBtn = document.getElementById("deleteExpenseBtn");
-    if (deleteBtn) {
-      const newBtn = deleteBtn.cloneNode(true);
-      deleteBtn.parentNode.replaceChild(newBtn, deleteBtn);
-      newBtn.addEventListener("click", () => deleteExpense(expense.id));
-    }
-
-    // Initialize Split Logic
-    const members = await fetchMembers();
-    initializeSplitLogic(members, expense);
-
-    // Show modal
-    const modalEl = document.getElementById("editExpenseModal");
-    if (modalEl) {
-      // Dispose existing instance if any to prevent backdrop issues
-      const existingModal = bootstrap.Modal.getInstance(modalEl);
-      if (existingModal) existingModal.dispose();
-
-      const modal = new bootstrap.Modal(modalEl);
-      modal.show();
-    }
-  } catch (err) {
-    console.error(err);
-    alert("Failed to load expense data.");
-  }
-}
-
-function addSplitRow() {
-  const container = document.getElementById("editSplitsContainer");
-  container.insertAdjacentHTML("beforeend", `
-    <div class="input-group mb-2 split-row">
-      <input type="number" class="form-control split-user-id" placeholder="User ID">
-      <input type="number" class="form-control split-amount" placeholder="Share amount">
-      <button class="btn btn-outline-danger" type="button" onclick="this.parentElement.remove()">🗑️</button>
-    </div>
-  `);
-}
-
-// -----------------------------
-// Save changes (submit edit form)
-// -----------------------------
-async function submitEditExpense() {
-  const id = document.getElementById("editExpenseId").value;
-  const description = document.getElementById("editDescription").value;
-  const amount = parseFloat(document.getElementById("editAmount").value);
-  const dateStr = document.getElementById("editDate").value;
-  const category = document.getElementById("editCategory").value;
-  const note = document.getElementById("editNote").value;
-  const walletId = document.getElementById("editWallet").value || null;
-  const splitType = document.querySelector('input[name="splitType"]:checked').value;
-
-  // Validation
-  if (!description.trim()) return showError("Please enter a description");
-  if (isNaN(amount) || amount <= 0) return showError("Amount must be a positive number");
-  if (!dateStr) return showError("Please select a date");
-
-  // Reconstruct Date
-  let createdAtISO;
-  try {
-    const dateInput = document.getElementById("editDate");
-    const originalTime = dateInput.dataset.originalTime || "00:00";
-    const [year, month, day] = dateStr.split('-').map(Number);
-    const [hours, minutes] = originalTime.split(':').map(Number);
-    const newDate = new Date(year, month - 1, day, hours, minutes, 0);
-    createdAtISO = newDate.toISOString();
-  } catch (e) {
-    console.error("Date parsing error", e);
-    createdAtISO = new Date().toISOString();
-  }
-
-  // Collect Splits based on Type
-  let splits = [];
-
-  if (splitType === 'equal') {
-    const checked = document.querySelectorAll("#equalSplitMembers input[type=checkbox]:checked");
-    const userIds = Array.from(checked).map(c => c.value); // Keep as strings
-    if (userIds.length === 0) return showError("Please select at least one member");
-    const share = amount / userIds.length;
-    splits = userIds.map(id => ({ user_id: id, share_amount: share }));
-  }
-  else if (splitType === 'percentage') {
-    const inputs = document.querySelectorAll('.percentage-input');
-    let totalPercent = 0;
-
-    inputs.forEach(input => {
-      const val = parseFloat(input.value) || 0;
-      if (val > 0) {
-        totalPercent += val;
-        const share = (amount * val) / 100;
-        splits.push({ user_id: input.dataset.userId, share_amount: share });
-      }
-    });
-
-    if (Math.abs(totalPercent - 100) > 0.1) return showError(`Total percentage must be 100% (currently ${totalPercent.toFixed(1)}%)`);
-  }
-  else if (splitType === 'custom') {
-    const inputs = document.querySelectorAll('.custom-amount-input');
-    let totalSplit = 0;
-
-    inputs.forEach(input => {
-      const val = parseFloat(input.value) || 0;
-      if (val > 0) {
-        totalSplit += val;
-        splits.push({ user_id: input.dataset.userId, share_amount: val });
-      }
-    });
-
-    if (Math.abs(totalSplit - amount) > 0.01) return showError(`Total split amount (${totalSplit.toFixed(2)}) must match expense amount (${amount.toFixed(2)})`);
-  }
-
-  if (splits.length === 0) return showError("Please assign splits to at least one member");
-
-  const payload = {
-    description,
-    amount,
-    category,
-    note,
-    wallet_id: walletId || null,
-    splits,
-    created_at: createdAtISO
-  };
-
-  try {
-    const submitBtn = document.querySelector('#editExpenseModal .btn-primary');
-    submitBtn.innerHTML = '<i class="bi bi-hourglass-split me-1"></i>Saving...';
-    submitBtn.disabled = true;
-
-    const res = await fetch(`${API_URL}/expenses/${id}`, {
-      method: "PUT",
-      headers: getHeaders(),
-      body: JSON.stringify(payload),
-    });
-
-    if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.detail || "Failed to update expense");
-    }
-
-    showSuccess("Expense updated successfully!");
-    const modalEl = document.getElementById("editExpenseModal");
-    if (modalEl) {
-      const modal = bootstrap.Modal.getInstance(modalEl);
-      if (modal) modal.hide();
-    }
-
-    await loadExpenses(true);
-    await loadWallets();
-
-  } catch (err) {
-    console.error("❌ Error updating expense:", err);
-    showError(err.message || "Failed to update expense");
-  } finally {
-    const submitBtn = document.querySelector('#editExpenseModal .btn-primary');
-    if (submitBtn) {
-      submitBtn.innerHTML = 'Save Changes';
-      submitBtn.disabled = false;
-    }
-  }
-}
 
 // -----------------------------
 // Add Expense Split Logic
@@ -3293,244 +3301,8 @@ function deselectAllAddMembers() {
 // -----------------------------
 // Advanced Split Logic (Edit Modal)
 // -----------------------------
-function initializeSplitLogic(members, expense) {
-  const splitRadios = document.querySelectorAll('input[name="splitType"]');
-  const amountInput = document.getElementById('editAmount');
+// Duplicate edit split logic removed
 
-  // Containers
-  const equalView = document.getElementById('equalSplitView');
-  const percentageView = document.getElementById('percentageSplitView');
-  const customView = document.getElementById('customSplitView');
-
-  // Labels for styling
-  const labels = {
-    equal: document.getElementById('labelSplitEqual'),
-    percentage: document.getElementById('labelSplitPercentage'),
-    custom: document.getElementById('labelSplitCustom')
-  };
-
-  function updateTabStyles(selectedType) {
-    Object.keys(labels).forEach(type => {
-      const label = labels[type];
-      if (type === selectedType) {
-        label.classList.remove('text-muted');
-        label.classList.add('bg-white', 'shadow-sm', 'text-dark');
-      } else {
-        label.classList.add('text-muted');
-        label.classList.remove('bg-white', 'shadow-sm', 'text-dark');
-      }
-    });
-  }
-
-  // Render all views initially
-  renderEqualSplitView(members, expense);
-  renderPercentageSplitView(members, expense);
-  renderCustomSplitView(members, expense);
-
-  // Handle Tab Switching
-  splitRadios.forEach(radio => {
-    radio.addEventListener('change', (e) => {
-      const type = e.target.value;
-
-      // Reset all to hidden
-      [equalView, percentageView, customView].forEach(view => {
-        view.classList.add('d-none');
-        view.classList.remove('d-flex');
-      });
-
-      // Show selected
-      const selectedView = type === 'equal' ? equalView
-        : type === 'percentage' ? percentageView
-          : customView;
-
-      selectedView.classList.remove('d-none');
-      selectedView.classList.add('d-flex');
-
-      updateTabStyles(type);
-      updateSplitCalculations(type);
-    });
-  });
-
-  // Handle Amount Change
-  amountInput.addEventListener('input', () => {
-    const type = document.querySelector('input[name="splitType"]:checked').value;
-    updateSplitCalculations(type);
-  });
-
-  // Default to Equal
-  document.getElementById('splitEqual').checked = true;
-
-  // Reset initial state
-  [equalView, percentageView, customView].forEach(view => {
-    view.classList.add('d-none');
-    view.classList.remove('d-flex');
-  });
-
-  equalView.classList.remove('d-none');
-  equalView.classList.add('d-flex');
-
-  updateTabStyles('equal');
-
-  updateSplitCalculations('equal');
-}
-
-function renderEqualSplitView(members, expense) {
-  const container = document.getElementById('equalSplitMembers');
-  container.innerHTML = '';
-
-  members.forEach(member => {
-    const split = expense.splits.find(s => s.user_id === member.user_id);
-    const isChecked = !!split;
-    const initials = (member.username || "U").substring(0, 2).toUpperCase();
-
-    const div = document.createElement('div');
-    div.className = 'd-flex align-items-center justify-content-between p-2';
-    div.innerHTML = `
-      <div class="d-flex align-items-center gap-3">
-        <input class="form-check-input fs-5 m-0 border-primary" type="checkbox" value="${member.user_id}" ${isChecked ? 'checked' : ''} style="cursor: pointer;">
-        <div class="avatar rounded-circle bg-light text-dark d-flex align-items-center justify-content-center fw-bold border" style="width: 40px; height: 40px;">
-          <img src="https://ui-avatars.com/api/?name=${member.username}&background=random" class="rounded-circle" width="40" height="40" alt="${initials}">
-        </div>
-        <span class="fw-semibold text-dark">${member.username}</span>
-      </div>
-      <div class="input-group input-group-sm" style="width: 120px;">
-        <span class="input-group-text bg-white border-end-0 text-muted">$</span>
-        <input type="text" class="form-control bg-white border-start-0 text-end fw-bold text-dark equal-amount-display" value="0.00" readonly>
-      </div>
-    `;
-
-    // Toggle checkbox when clicking row (except input)
-    div.addEventListener('click', (e) => {
-      if (e.target.tagName !== 'INPUT') {
-        const checkbox = div.querySelector('input[type="checkbox"]');
-        checkbox.checked = !checkbox.checked;
-        updateSplitCalculations('equal');
-      }
-    });
-
-    div.querySelector('input[type="checkbox"]').addEventListener('change', () => updateSplitCalculations('equal'));
-    container.appendChild(div);
-  });
-}
-
-function renderPercentageSplitView(members, expense) {
-  const container = document.getElementById('percentageSplitMembers');
-  container.innerHTML = '';
-
-  members.forEach(member => {
-    const initials = (member.username || "U").substring(0, 2).toUpperCase();
-    const div = document.createElement('div');
-    div.className = 'd-flex align-items-center justify-content-between p-2';
-    div.innerHTML = `
-      <div class="d-flex align-items-center gap-3">
-        <div class="avatar rounded-circle bg-light text-dark d-flex align-items-center justify-content-center fw-bold border" style="width: 40px; height: 40px;">
-          <img src="https://ui-avatars.com/api/?name=${member.username}&background=random" class="rounded-circle" width="40" height="40" alt="${initials}">
-        </div>
-        <span class="fw-semibold text-dark">${member.username}</span>
-      </div>
-      <div class="input-group input-group-sm" style="width: 120px;">
-        <input type="number" class="form-control text-end percentage-input border-end-0" data-user-id="${member.user_id}" value="0" min="0" max="100" placeholder="0">
-        <span class="input-group-text bg-white border-start-0 text-muted">%</span>
-      </div>
-    `;
-
-    div.querySelector('input').addEventListener('input', () => updateSplitCalculations('percentage'));
-    container.appendChild(div);
-  });
-}
-
-function renderCustomSplitView(members, expense) {
-  const container = document.getElementById('customSplitMembers');
-  container.innerHTML = '';
-
-  members.forEach(member => {
-    const split = expense.splits.find(s => s.user_id === member.user_id);
-    const amount = split ? split.share_amount : 0;
-    const initials = (member.username || "U").substring(0, 2).toUpperCase();
-
-    const div = document.createElement('div');
-    div.className = 'd-flex align-items-center justify-content-between p-2';
-    div.innerHTML = `
-      <div class="d-flex align-items-center gap-3">
-        <div class="avatar rounded-circle bg-light text-dark d-flex align-items-center justify-content-center fw-bold border" style="width: 40px; height: 40px;">
-          <img src="https://ui-avatars.com/api/?name=${member.username}&background=random" class="rounded-circle" width="40" height="40" alt="${initials}">
-        </div>
-        <span class="fw-semibold text-dark">${member.username}</span>
-      </div>
-      <div class="input-group input-group-sm" style="width: 120px;">
-        <span class="input-group-text bg-white border-end-0 text-muted">$</span>
-        <input type="number" class="form-control border-start-0 text-end custom-amount-input" data-user-id="${member.user_id}" value="${amount}" min="0" step="0.01" placeholder="0.00">
-      </div>
-    `;
-
-    div.querySelector('input').addEventListener('input', () => updateSplitCalculations('custom'));
-    container.appendChild(div);
-  });
-}
-
-function updateSplitCalculations(type) {
-  const totalAmount = parseFloat(document.getElementById('editAmount').value) || 0;
-  const alertBox = document.getElementById('splitValidationAlert');
-
-  // Reset alert
-  alertBox.style.display = 'none';
-  alertBox.className = 'alert mt-4 mb-0 text-center fw-bold border-0 rounded-3';
-
-  if (type === 'equal') {
-    const checkedBoxes = document.querySelectorAll('#equalSplitMembers input[type="checkbox"]:checked');
-    const count = checkedBoxes.length;
-    const share = count > 0 ? (totalAmount / count).toFixed(2) : '0.00';
-
-    // Update display inputs
-    document.querySelectorAll('#equalSplitMembers .equal-amount-display').forEach(input => {
-      // Find parent row checkbox
-      const row = input.closest('.d-flex.justify-content-between');
-      const checkbox = row.querySelector('input[type="checkbox"]');
-
-      if (checkbox.checked) {
-        input.value = share;
-        input.classList.remove('text-muted');
-        input.classList.add('text-dark');
-      } else {
-        input.value = '0.00';
-        input.classList.add('text-muted');
-        input.classList.remove('text-dark');
-      }
-    });
-  }
-  else if (type === 'percentage') {
-    const inputs = document.querySelectorAll('.percentage-input');
-    let totalPercent = 0;
-    inputs.forEach(i => totalPercent += parseFloat(i.value) || 0);
-
-    const remaining = 100 - totalPercent;
-
-    if (Math.abs(remaining) > 0.1) {
-      alertBox.style.display = 'block';
-      alertBox.style.backgroundColor = '#ffe4e6'; // Light red
-      alertBox.style.color = '#e11d48'; // Dark red
-      alertBox.textContent = remaining > 0
-        ? `Remaining: ${remaining.toFixed(1)}%`
-        : `Over-assigned by ${Math.abs(remaining).toFixed(1)}%`;
-    }
-  }
-  else if (type === 'custom') {
-    const inputs = document.querySelectorAll('.custom-amount-input');
-    let totalSplit = 0;
-    inputs.forEach(i => totalSplit += parseFloat(i.value) || 0);
-
-    const remaining = totalAmount - totalSplit;
-
-    if (Math.abs(remaining) > 0.01) {
-      alertBox.style.display = 'block';
-      alertBox.style.backgroundColor = '#ffe4e6'; // Light red
-      alertBox.style.color = '#e11d48'; // Dark red
-      alertBox.textContent = remaining > 0
-        ? `Remaining: $${remaining.toFixed(2)}`
-        : `Over-assigned by $${Math.abs(remaining).toFixed(2)}`;
-    }
-  }
-}
 
 // -----------------------------
 // Attach edit button events

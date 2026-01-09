@@ -22,7 +22,6 @@ router.get('/search', friendController.searchUsers);
 // @route   POST /api/friends/request/:friendId
 // @access  Private
 router.post('/request/:friendId', 
-  validate(schemas.friendIdParam, 'params'), 
   friendController.sendFriendRequest
 );
 
