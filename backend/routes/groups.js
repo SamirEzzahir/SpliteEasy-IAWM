@@ -39,11 +39,7 @@ router.get('/:id/can_leave', validate(schemas.idParam, 'params'), groupControlle
 // @desc    Update group
 // @route   PUT /api/groups/:id
 // @access  Private (Admin only)
-router.put('/:id',
-  validate(schemas.idParam, 'params'),
-  validate(schemas.groupUpdate),
-  groupController.updateGroup
-);
+router.put('/:id', validate(schemas.idParam, 'params'), validate(schemas.groupUpdate), groupController.updateGroup);
 
 // @desc    Delete group
 // @route   DELETE /api/groups/:id
@@ -79,14 +75,14 @@ router.post('/:id/add_members',
   async (req, res, next) => {
     try {
       const { user_ids, is_admin = false } = req.body;
-      
+
       if (!user_ids || !Array.isArray(user_ids)) {
         return res.status(400).json({
           success: false,
           message: 'user_ids array is required'
         });
       }
-      
+
       const group = await Group.findById(req.params.id);
       if (!group) {
         return res.status(404).json({
@@ -94,7 +90,7 @@ router.post('/:id/add_members',
           message: 'Group not found'
         });
       }
-      
+
       // Check if current user is admin
       const isCurrentUserAdmin = await group.isAdmin(req.user._id);
       if (!isCurrentUserAdmin) {
@@ -103,13 +99,13 @@ router.post('/:id/add_members',
           message: 'Only group admins can add members'
         });
       }
-      
+
       const results = {
         successful: 0,
         failed: 0,
         errors: []
       };
-      
+
       // Add each user
       for (const userId of user_ids) {
         try {
@@ -120,7 +116,7 @@ router.post('/:id/add_members',
             results.errors.push(`User ${userId} not found`);
             continue;
           }
-          
+
           // Add member
           await Membership.addMember(group._id, userId, is_admin);
           results.successful++;
@@ -134,7 +130,7 @@ router.post('/:id/add_members',
           }
         }
       }
-      
+
       res.status(200).json({
         success: true,
         message: `Added ${results.successful} members successfully`,

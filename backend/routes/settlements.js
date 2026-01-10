@@ -49,7 +49,7 @@ router.post('/:groupId/record',
 // @route   POST /api/settle/:settlementId/accept
 // @access  Private
 router.post('/:settlementId/accept', 
-  validate(schemas.objectId, 'params'), 
+  validate(schemas.settlementIdParam, 'params'), 
   settlementController.acceptSettlement
 );
 
@@ -57,7 +57,7 @@ router.post('/:settlementId/accept',
 // @route   POST /api/settle/:settlementId/reject
 // @access  Private
 router.post('/:settlementId/reject', 
-  validate(schemas.objectId, 'params'), 
+  validate(schemas.settlementIdParam, 'params'), 
   settlementController.rejectSettlement
 );
 

@@ -117,25 +117,36 @@ const createExpense = async (req, res, next) => {
  */
 const getGroupExpenses = async (req, res, next) => {
   try {
+    console.log('🔍 getGroupExpenses called with params:', req.params);
+    console.log('🔍 getGroupExpenses called with query:', req.query);
+    
     const { groupId } = req.params;
     const { page, limit, category, payerId, startDate, endDate, sortBy, sortOrder } = req.query;
+
+    console.log('📁 Processing groupId:', groupId);
 
     // Check if group exists and user is member
     const group = await Group.findById(groupId);
     if (!group) {
+      console.log('❌ Group not found:', groupId);
       return res.status(404).json({
         success: false,
         message: 'Group not found'
       });
     }
 
+    console.log('✅ Group found:', group.title);
+
     const isMember = await group.isMember(req.user._id);
     if (!isMember) {
+      console.log('❌ User not member of group:', req.user._id);
       return res.status(403).json({
         success: false,
         message: 'Not authorized to view expenses for this group'
       });
     }
+
+    console.log('✅ User is member, fetching expenses...');
 
     const result = await Expense.getGroupExpenses(groupId, {
       page: parseInt(page),
@@ -148,23 +159,60 @@ const getGroupExpenses = async (req, res, next) => {
       sortOrder
     });
 
-    // Transform expenses to match frontend expectations
-    const transformedExpenses = result.expenses.map(expense => ({
-      ...expense.toObject(),
-      payer_id: expense.payerId._id,
-      payer_username: expense.payerId.username,
-      id: expense._id,
-      created_at: expense.createdAt // Explicitly map createdAt to created_at
-    }));
+    console.log('📊 Raw expenses result:', {
+      expenseCount: result.expenses.length,
+      totalPages: result.totalPages,
+      currentPage: result.currentPage,
+      totalExpenses: result.totalExpenses
+    });
 
-    res.status(200).json({
+    // Get splits for each expense and transform data
+    const transformedExpenses = [];
+    
+    for (const expense of result.expenses) {
+      // Get splits for this expense with populated user data
+      const Split = require('../models/Split');
+      const splits = await Split.find({ expenseId: expense._id })
+        .populate('userId', 'firstName lastName username');
+
+      const transformedExpense = {
+        ...expense.toObject(),
+        payer_id: expense.payerId ? expense.payerId._id : null,
+        payer_username: expense.payerId ? expense.payerId.username : 'Unknown',
+        added_by_username: expense.addedBy ? expense.addedBy.username : 'Unknown',
+        wallet_name: expense.walletId ? expense.walletId.name : null,
+        id: expense._id,
+        created_at: expense.createdAt,
+        updated_at: expense.updatedAt,
+        splits: splits.map(s => ({
+          user_id: s.userId ? s.userId._id : null,
+          username: s.userId ? s.userId.username : 'Unknown',
+          share_amount: s.shareAmount ? parseFloat(s.shareAmount.toString()) : 0
+        }))
+      };
+      
+      transformedExpenses.push(transformedExpense);
+    }
+
+    console.log('✅ Transformed expenses:', transformedExpenses.length);
+
+    const response = {
       success: true,
       data: {
         ...result,
         expenses: transformedExpenses
       }
+    };
+
+    console.log('📤 Sending response with structure:', {
+      success: response.success,
+      dataKeys: Object.keys(response.data),
+      expenseCount: response.data.expenses.length
     });
+
+    res.status(200).json(response);
   } catch (error) {
+    console.error('❌ Error in getGroupExpenses:', error);
     next(error);
   }
 };
@@ -205,10 +253,22 @@ const getExpenseById = async (req, res, next) => {
       });
     }
 
-    res.status(200).json({
-      success: true,
-      data: { expense }
-    });
+    // Transform to match frontend (snake_case)
+    const transformedExpense = {
+      ...expense.toObject(),
+      payer_id: expense.payerId._id,
+      payer_username: expense.payerId.username,
+      added_by_username: expense.addedBy ? expense.addedBy.username : "Unknown",
+      created_at: expense.createdAt,
+      updated_at: expense.updatedAt,
+      splits: expense.splits.map(s => ({
+        user_id: s.userId._id,
+        username: s.userId.username,
+        share_amount: parseFloat(s.shareAmount.toString())
+      }))
+    };
+
+    res.status(200).json(transformedExpense);
   } catch (error) {
     next(error);
   }
@@ -242,7 +302,10 @@ const updateExpense = async (req, res, next) => {
       });
     }
 
-    const allowedFields = ['description', 'amount', 'currency', 'category', 'walletId', 'splitType', 'note', 'splits'];
+    // Handle both camelCase and snake_case formats (like createExpense does)
+    const walletId = req.body.walletId || req.body.wallet_id;
+    
+    const allowedFields = ['description', 'amount', 'currency', 'category', 'splitType', 'note'];
     const updates = {};
 
     allowedFields.forEach(field => {
@@ -251,6 +314,11 @@ const updateExpense = async (req, res, next) => {
       }
     });
 
+    // Handle walletId separately
+    if (walletId !== undefined) {
+      updates.walletId = walletId;
+    }
+
     // Update expense
     const updatedExpense = await Expense.findByIdAndUpdate(
       req.params.id,
@@ -258,15 +326,23 @@ const updateExpense = async (req, res, next) => {
       { new: true, runValidators: true }
     );
 
-    // Handle splits update
-    if (req.body.splits) {
-      if (!updatedExpense.validateSplits(req.body.splits)) {
+    // Handle splits update - convert snake_case to camelCase if needed
+    if (req.body.splits && Array.isArray(req.body.splits) && req.body.splits.length > 0) {
+      // Convert splits from snake_case to camelCase if needed
+      const convertedSplits = req.body.splits.map(split => ({
+        userId: split.userId || split.user_id,
+        shareAmount: split.shareAmount || split.share_amount
+      }));
+
+      // Validate splits
+      if (!updatedExpense.validateSplits(convertedSplits)) {
         return res.status(400).json({
           success: false,
           message: 'Split amounts do not match expense total'
         });
       }
-      await Split.createSplits(updatedExpense._id, req.body.splits);
+      
+      await Split.createSplits(updatedExpense._id, convertedSplits);
     }
 
     // Create notifications

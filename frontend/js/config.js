@@ -1,6 +1,6 @@
 // frontend/js/config.js
 //const API_URL = "http://pcrox.ddns.net:8000";
-const API_URL = "http://127.0.0.1:8000/api"; // local development
+const API_URL = "http://192.168.137.1:8000/api"; // local development
 // const API_URL = "http://pcrox.ddns.net:8000"; // local option
 
 // -------------------------
@@ -45,7 +45,7 @@ function getHeaders(json = true) {
 // ✅ Check login (safe)
 function checkLogin(redirect = true) {
   loadAuth();
-  
+
   // small delay to avoid redirect loop during DOM load
   if (!token || !currentUser || !currentUser.id) {
     console.warn("🔒 Not authenticated");

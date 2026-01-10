@@ -59,6 +59,11 @@ const upload = multer({
 // @access  Private
 router.post('/', validate(schemas.expenseCreate), expenseController.createExpense);
 
+// @desc    Get expense by ID (must be before /:groupId route)
+// @route   GET /api/expenses/exp/:id
+// @access  Private
+router.get('/exp/:id', validate(schemas.idParam, 'params'), expenseController.getExpenseById);
+
 // @desc    Get group expenses
 // @route   GET /api/expenses/:groupId
 // @access  Private
@@ -67,12 +72,6 @@ router.get('/:groupId',
   validate(schemas.pagination, 'query'),
   expenseController.getGroupExpenses
 );
-
-// @desc    Get expense by ID
-// @desc    Get expense by ID
-// @route   GET /api/expenses/exp/:id
-// @access  Private
-router.get('/exp/:id', validate(schemas.idParam, 'params'), expenseController.getExpenseById);
 
 // @desc    Update expense
 // @route   PUT /api/expenses/:id

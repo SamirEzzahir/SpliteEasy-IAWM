@@ -3,6 +3,8 @@ const Group = require('../models/Group');
 const User = require('../models/User');
 const Membership = require('../models/Membership');
 const ActivityLog = require('../models/ActivityLog');
+const BalanceService = require('../services/balanceService');
+const GlobalSettlement = require('../models/GlobalSettlement');
 
 /**
  * @desc    Get group balances
@@ -30,9 +32,76 @@ const getGroupBalances = async (req, res, next) => {
       });
     }
     
-    // Calculate balances (this would need to be implemented in your models)
-    // For now, return empty array - you'll need to implement the balance calculation logic
-    const balances = [];
+    // Get all group members
+    const members = await Membership.find({ groupId: groupId })
+      .populate('userId', 'username firstName lastName');
+    
+    if (!members || members.length === 0) {
+      return res.status(200).json([]);
+    }
+    
+    // Get user's global settlement mode preference
+    const user = await User.findById(req.user._id).select('globalSettlementMode');
+    const settlementMode = user?.globalSettlementMode || 'separate';
+    
+    // Calculate balance for each member
+    const balances = await Promise.all(
+      members.map(async (member) => {
+        const userId = member.userId._id;
+        const balanceData = await BalanceService.calculateUserGroupBalance(userId, groupId);
+        
+        // Get original balance (before global adjustments)
+        const originalNet = balanceData.netBalance;
+        let netBalance = originalNet;
+        let globalAdjustment = 0;
+        
+        // Apply global settlement adjustments if mode is not 'separate'
+        if (settlementMode !== 'separate') {
+          // Get global settlements where this user is involved
+          const globalSettlements = await GlobalSettlement.find({
+            $or: [
+              { fromUserId: userId, status: 'accepted' },
+              { toUserId: userId, status: 'accepted' }
+            ]
+          });
+          
+          // Calculate adjustment from global settlements
+          globalSettlements.forEach(gs => {
+            const amount = parseFloat(gs.amount.toString());
+            if (gs.fromUserId.toString() === userId.toString()) {
+              globalAdjustment -= amount; // User paid, so their balance decreases
+            } else if (gs.toUserId.toString() === userId.toString()) {
+              globalAdjustment += amount; // User received, so their balance increases
+            }
+          });
+          
+          // Apply adjustment based on mode
+          if (settlementMode === 'auto_adjust') {
+            netBalance = originalNet + globalAdjustment;
+          } else if (settlementMode === 'hybrid') {
+            // Keep original for display, but also show adjustment
+            // netBalance stays as originalNet, globalAdjustment is separate
+          }
+        }
+        
+        return {
+          user_id: userId.toString(),
+          username: member.userId.username || 'Unknown',
+          firstName: member.userId.firstName || '',
+          lastName: member.userId.lastName || '',
+          totalPaid: balanceData.totalPaid,
+          totalOwed: balanceData.totalOwed,
+          receivedSettlements: balanceData.receivedSettlements,
+          paidSettlements: balanceData.paidSettlements,
+          net: netBalance,
+          original_net: originalNet,
+          global_adjustment: globalAdjustment,
+          isOwed: netBalance > 0.01,
+          owes: netBalance < -0.01,
+          isSettled: Math.abs(netBalance) <= 0.01
+        };
+      })
+    );
     
     res.status(200).json(balances);
   } catch (error) {
@@ -87,21 +156,21 @@ const getSettlementHistory = async (req, res, next) => {
       .populate('toUserId', 'username firstName lastName')
       .sort({ createdAt: -1 });
     
-    // Format response
+    // Format response to match frontend expectations (snake_case)
     const formattedSettlements = settlements.map(settlement => ({
-      id: settlement._id,
-      groupId: settlement.groupId,
-      fromUserId: settlement.fromUserId._id,
-      fromUsername: settlement.fromUserId.username,
-      toUserId: settlement.toUserId._id,
-      toUsername: settlement.toUserId.username,
-      amount: settlement.amount,
+      id: settlement._id.toString(),
+      group_id: settlement.groupId.toString(),
+      from_user_id: settlement.fromUserId._id.toString(),
+      from_username: settlement.fromUserId.username || 'Unknown',
+      to_user_id: settlement.toUserId._id.toString(),
+      to_username: settlement.toUserId.username || 'Unknown',
+      amount: parseFloat(settlement.amount.toString()),
       status: settlement.status,
-      message: settlement.message,
-      proofPhoto: settlement.proofPhoto,
-      rejectedReason: settlement.rejectedReason,
-      createdAt: settlement.createdAt,
-      updatedAt: settlement.updatedAt
+      message: settlement.message || null,
+      proof_photo: settlement.proofPhoto || null,
+      rejected_reason: settlement.rejectedReason || null,
+      created_at: settlement.createdAt,
+      updated_at: settlement.updatedAt
     }));
     
     res.status(200).json(formattedSettlements);
@@ -136,11 +205,46 @@ const getSuggestedSettlements = async (req, res, next) => {
       });
     }
     
-    // Calculate suggested settlements (this would need balance calculation logic)
-    // For now, return empty array
-    const suggestedSettlements = [];
+    // Get all group members
+    const members = await Membership.find({ groupId: groupId })
+      .populate('userId', 'username firstName lastName');
     
-    res.status(200).json(suggestedSettlements);
+    if (!members || members.length === 0) {
+      return res.status(200).json([]);
+    }
+    
+    // Calculate balance for each member
+    const balances = await Promise.all(
+      members.map(async (member) => {
+        const userId = member.userId._id;
+        const balanceData = await BalanceService.calculateUserGroupBalance(userId, groupId);
+        
+        return {
+          userId: userId,
+          user: {
+            _id: member.userId._id,
+            username: member.userId.username,
+            firstName: member.userId.firstName,
+            lastName: member.userId.lastName
+          },
+          balance: balanceData.netBalance
+        };
+      })
+    );
+    
+    // Use the optimization algorithm to suggest settlements
+    const suggestedSettlements = BalanceService.optimizeSettlements(balances);
+    
+    // Format response to match frontend expectations
+    const formattedSettlements = suggestedSettlements.map(settlement => ({
+      from_user_id: settlement.fromUserId.toString(),
+      from_username: settlement.fromUser?.username || 'Unknown',
+      to_user_id: settlement.toUserId.toString(),
+      to_username: settlement.toUser?.username || 'Unknown',
+      amount: parseFloat(settlement.amount.toString())
+    }));
+    
+    res.status(200).json(formattedSettlements);
   } catch (error) {
     next(error);
   }
@@ -154,7 +258,10 @@ const getSuggestedSettlements = async (req, res, next) => {
 const recordSettlement = async (req, res, next) => {
   try {
     const { groupId } = req.params;
-    const { toUserId, amount, message } = req.body;
+    // Handle both camelCase and snake_case formats
+    const toUserId = req.body.toUserId || req.body.to_user_id;
+    const amount = req.body.amount;
+    const message = req.body.message;
     
     if (!toUserId || !amount) {
       return res.status(400).json({
@@ -255,7 +362,7 @@ const recordSettlement = async (req, res, next) => {
  */
 const acceptSettlement = async (req, res, next) => {
   try {
-    const { settlementId } = req.params;
+    const settlementId = req.params.settlementId;
     
     const settlement = await Settlement.findById(settlementId)
       .populate('fromUserId', 'username')
@@ -331,7 +438,7 @@ const acceptSettlement = async (req, res, next) => {
  */
 const rejectSettlement = async (req, res, next) => {
   try {
-    const { settlementId } = req.params;
+    const settlementId = req.params.settlementId;
     const { reason } = req.body;
     
     const settlement = await Settlement.findById(settlementId)

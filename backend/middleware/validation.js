@@ -3,6 +3,24 @@ const Joi = require('joi');
 // Validation middleware factory
 const validate = (schema, property = 'body') => {
   return (req, res, next) => {
+    // Clean empty strings and null values from body for userUpdate schema
+    if (property === 'body' && req.body && typeof req.body === 'object') {
+      const userUpdateFields = ['firstName', 'lastName', 'phone', 'gender', 'globalSettlementMode'];
+      const hasUserUpdateFields = userUpdateFields.some(field => field in req.body);
+      
+      if (hasUserUpdateFields) {
+        const cleaned = {};
+        Object.keys(req.body).forEach(key => {
+          const value = req.body[key];
+          // Only include non-empty, non-null, non-undefined values
+          if (value !== null && value !== undefined && value !== '') {
+            cleaned[key] = value;
+          }
+        });
+        req.body = cleaned;
+      }
+    }
+
     console.log(`Validating ${property}:`, req[property]);
 
     const { error } = schema.validate(req[property], { abortEarly: false });
@@ -115,9 +133,11 @@ const schemas = {
     note: Joi.string().max(500).allow(null, '').optional(),
     splits: Joi.array().items(
       Joi.object({
-        user_id: Joi.string().hex().length(24).required(),
-        share_amount: Joi.number().positive().precision(2).required()
-      })
+        userId: Joi.string().hex().length(24).optional(),
+        user_id: Joi.string().hex().length(24).optional(), // Accept ObjectId string
+        shareAmount: Joi.number().positive().precision(2).optional(),
+        share_amount: Joi.number().positive().precision(2).optional() // Accept both formats
+      }).or('userId', 'user_id').or('shareAmount', 'share_amount')
     ).optional()
   }),
 
@@ -158,7 +178,13 @@ const schemas = {
   pagination: Joi.object({
     page: Joi.number().integer().min(1).default(1),
     limit: Joi.number().integer().min(1).max(100).default(20),
-    _t: Joi.number().optional() // Allow cache-busting timestamp
+    _t: Joi.number().optional(), // Allow cache-busting timestamp
+    category: Joi.string().optional(),
+    payerId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).optional(),
+    startDate: Joi.date().optional(),
+    endDate: Joi.date().optional(),
+    sortBy: Joi.string().optional(),
+    sortOrder: Joi.string().valid('asc', 'desc').optional()
   }),
 
   // MongoDB ObjectId validation
@@ -172,6 +198,11 @@ const schemas = {
   // ID validation (for :id params)
   idParam: Joi.object({
     id: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
+  }),
+
+  // Settlement ID validation (for :settlementId params)
+  settlementIdParam: Joi.object({
+    settlementId: Joi.string().pattern(/^[0-9a-fA-F]{24}$/).required()
   }),
 
   // User ID validation (for :userId params)

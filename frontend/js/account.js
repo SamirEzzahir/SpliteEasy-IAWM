@@ -323,20 +323,68 @@ document.getElementById("modalAccountForm").addEventListener("submit", async (e)
         submitBtn.innerHTML = '<div class="loading-spinner me-2"></div>Saving...';
         submitBtn.disabled = true;
         
-    const payload = {
-            username: document.getElementById("modal_username").value.trim(),
-            first_name: document.getElementById("modal_first_name").value.trim() || null,
-            last_name: document.getElementById("modal_last_name").value.trim() || null,
-            email: document.getElementById("modal_email").value.trim(),
-            phone: document.getElementById("modal_phone").value.trim() || null,
-        gender: document.getElementById("modal_gender").value || null,
-            profile_photo: document.getElementById("modal_profile_photo").value.trim() || null
-        };
+    // Backend only allows updating: firstName, lastName, phone, gender, globalSettlementMode
+    // Username and email cannot be updated via this endpoint
+    const firstNameEl = document.getElementById("modal_first_name");
+    const lastNameEl = document.getElementById("modal_last_name");
+    const phoneEl = document.getElementById("modal_phone");
+    const genderEl = document.getElementById("modal_gender");
+    
+    const payload = {};
 
-        // Validate required fields
-        if (!payload.username || !payload.email) {
-            throw new Error("Username and email are required");
+    // Only include fields that have valid values (validation requires strings, not null/empty)
+    // firstName and lastName must be at least 1 character if provided
+    if (firstNameEl && firstNameEl.value) {
+        const firstName = String(firstNameEl.value).trim();
+        if (firstName.length >= 1 && firstName.length <= 50) {
+            payload.firstName = firstName;
         }
+    }
+    
+    if (lastNameEl && lastNameEl.value) {
+        const lastName = String(lastNameEl.value).trim();
+        if (lastName.length >= 1 && lastName.length <= 50) {
+            payload.lastName = lastName;
+        }
+    }
+    
+    // Phone must match pattern if provided
+    if (phoneEl && phoneEl.value) {
+        const phone = String(phoneEl.value).trim();
+        if (phone.length > 0) {
+            payload.phone = phone;
+        }
+    }
+    
+    // Gender must be 'Male' or 'Female' if provided
+    if (genderEl && genderEl.value) {
+        const gender = String(genderEl.value).trim();
+        if (gender === 'Male' || gender === 'Female') {
+            payload.gender = gender;
+        }
+    }
+
+    // Ensure all values in payload are strings and not empty
+    Object.keys(payload).forEach(key => {
+        const value = payload[key];
+        if (typeof value !== 'string' || value.length === 0) {
+            delete payload[key];
+        }
+    });
+
+    // Don't send empty payload
+    if (Object.keys(payload).length === 0) {
+        console.warn("⚠️ No fields to update - all fields are empty");
+        showToast("Please fill at least one field to update", "warning");
+        return;
+    }
+
+    console.log("📤 Sending update payload:", payload);
+    console.log("📤 Payload JSON:", JSON.stringify(payload));
+    console.log("📤 Payload types:", Object.keys(payload).reduce((acc, key) => {
+        acc[key] = typeof payload[key];
+        return acc;
+    }, {}));
 
         const res = await fetch(`${API_URL}/users/${window.currentUserId}`, {
             method: "PUT",
@@ -345,17 +393,49 @@ document.getElementById("modalAccountForm").addEventListener("submit", async (e)
         });
         
         if (!res.ok) {
-            const errorData = await res.json().catch(() => ({}));
-            throw new Error(errorData.detail || `Failed to update account: ${res.status}`);
+            const errorText = await res.text();
+            let errorMessage = `Failed to update account: ${res.status}`;
+            
+            try {
+                const errorData = JSON.parse(errorText);
+                console.log("❌ Full error response:", errorData);
+                
+                errorMessage = errorData.detail || errorData.message || errorMessage;
+                
+                // Handle validation errors
+                if (errorData.errors && Array.isArray(errorData.errors)) {
+                    const validationErrors = errorData.errors.map(e => {
+                        const field = e.field || 'unknown';
+                        const msg = e.message || 'validation error';
+                        return `${field}: ${msg}`;
+                    }).join('; ');
+                    errorMessage = validationErrors || errorMessage;
+                }
+            } catch (e) {
+                console.error("❌ Error parsing error response:", e);
+                if (errorText) errorMessage = errorText;
+            }
+            
+            console.error("❌ Update error:", errorMessage);
+            throw new Error(errorMessage);
         }
         
-        const updated = await res.json();
+        const response = await res.json();
+        // Backend returns { success: true, data: { user } }
+        const updated = response.data?.user || response.user || response;
         console.log("✅ Account updated successfully:", updated);
         
         // Update local storage and display
-        localStorage.setItem("currentUser", JSON.stringify(updated));
-        currentUserData = updated;
-        updateProfileDisplay(updated);
+        // Keep existing username and email from currentUserData
+        const updatedUser = {
+            ...currentUserData,
+            ...updated,
+            first_name: updated.firstName || updated.first_name,
+            last_name: updated.lastName || updated.last_name
+        };
+        localStorage.setItem("currentUser", JSON.stringify(updatedUser));
+        currentUserData = updatedUser;
+        updateProfileDisplay(updatedUser);
         
         // Show success message
         showToast("Profile updated successfully!", 'success');

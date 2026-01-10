@@ -20,6 +20,13 @@ let expensesPagination = {
 // ----------------------------
 // Helper Functions
 // ----------------------------
+function escapeHtml(text) {
+  if (!text) return '';
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
 async function fetchCurrentUser() {
   try {
     const res = await fetch(`${API_URL}/users/user/me`, { headers: getHeaders() });
@@ -564,7 +571,7 @@ function renderSettlementDesktopTable(settlement, user, index) {
         <div class="avatar rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2" style="width:32px;height:32px;font-size:0.8rem;font-weight:bold;">
           ${(settlement.from_username || "U").split(" ").map(w => w[0]).join("").toUpperCase()}
         </div>
-        <span class="fw-semibold">${settlement.from_username || "Unknown"}</span>
+        <span class="fw-semibold">${escapeHtml(settlement.from_username || "Unknown")}</span>
       </div>
     </td>
     <td>
@@ -572,14 +579,14 @@ function renderSettlementDesktopTable(settlement, user, index) {
     </td>
     <td>
       <span class="text-muted small">
-        ${isFromUser ? `You paid ${settlement.to_username || 'Unknown'}` :
-      isToUser ? `${settlement.from_username || 'Unknown'} paid you` :
-        `${settlement.from_username || 'Unknown'} paid ${settlement.to_username || 'Unknown'}`}
+        ${isFromUser ? `You paid ${escapeHtml(settlement.to_username || 'Unknown')}` :
+      isToUser ? `${escapeHtml(settlement.from_username || 'Unknown')} paid you` :
+        `${escapeHtml(settlement.from_username || 'Unknown')} paid ${escapeHtml(settlement.to_username || 'Unknown')}`}
       </span>
     </td>
     <td>
       <div class="d-flex gap-1">
-        <button class="btn btn-sm btn-outline-success" onclick="showSettlementDetail(${settlement.id})" title="View Details">
+        <button class="btn btn-sm btn-outline-success view-settlement-btn" data-settlement-id="${settlement.id}" title="View Details">
           <i class="bi bi-eye"></i>
         </button>
       </div>
@@ -611,10 +618,10 @@ function renderSettlementMobileCard(settlement, user, index) {
   `;
 
   const description = isFromUser ?
-    `You paid ${settlement.to_username || 'Unknown'} ${formatCurrency(settlement.amount, currentGroup?.currency || 'MAD')}` :
+    `You paid ${escapeHtml(settlement.to_username || 'Unknown')} ${formatCurrency(settlement.amount, currentGroup?.currency || 'MAD')}` :
     isToUser ?
-      `${settlement.from_username || 'Unknown'} paid you ${formatCurrency(settlement.amount, currentGroup?.currency || 'MAD')}` :
-      `${settlement.from_username || 'Unknown'} paid ${settlement.to_username || 'Unknown'} ${formatCurrency(settlement.amount, currentGroup?.currency || 'MAD')}`;
+      `${escapeHtml(settlement.from_username || 'Unknown')} paid you ${formatCurrency(settlement.amount, currentGroup?.currency || 'MAD')}` :
+      `${escapeHtml(settlement.from_username || 'Unknown')} paid ${escapeHtml(settlement.to_username || 'Unknown')} ${formatCurrency(settlement.amount, currentGroup?.currency || 'MAD')}`;
 
   card.innerHTML = `
     <div style="display: flex; align-items: center; width: 100%;">
@@ -698,7 +705,7 @@ function showSettlementDetail(settlementId) {
                 <div class="avatar rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2" style="width:32px;height:32px;font-size:0.8rem;font-weight:bold;">
                   ${(settlement.from_username || "U").split(" ").map(w => w[0]).join("").toUpperCase()}
                 </div>
-                <span>${settlement.from_username || "Unknown"}</span>
+                <span>${escapeHtml(settlement.from_username || "Unknown")}</span>
               </div>
             </div>
             <div class="col-6">
@@ -707,7 +714,7 @@ function showSettlementDetail(settlementId) {
                 <div class="avatar rounded-circle bg-info text-white d-flex align-items-center justify-content-center me-2" style="width:32px;height:32px;font-size:0.8rem;font-weight:bold;">
                   ${(settlement.to_username || "U").split(" ").map(w => w[0]).join("").toUpperCase()}
                 </div>
-                <span>${settlement.to_username || "Unknown"}</span>
+                <span>${escapeHtml(settlement.to_username || "Unknown")}</span>
               </div>
             </div>
           </div>
@@ -922,11 +929,12 @@ function getSettlementActionButtons(settlement) {
 
   // Only show accept/reject buttons if user is recipient and settlement is pending
   if (isToCurrentUser && isPending) {
+    const escapedUsername = escapeHtml(settlement.from_username || 'Unknown');
     return `
-      <button type="button" class="btn btn-success me-2" onclick="acceptSettlementFromExpenses(${settlement.id}, '${settlement.from_username}')">
+      <button type="button" class="btn btn-success me-2 accept-settlement-expense-btn" data-settlement-id="${settlement.id}" data-from-username="${escapedUsername}">
         <i class="bi bi-check-circle me-1"></i>Accept
       </button>
-      <button type="button" class="btn btn-danger me-2" onclick="rejectSettlementFromExpenses(${settlement.id}, '${settlement.from_username}')">
+      <button type="button" class="btn btn-danger me-2 reject-settlement-expense-btn" data-settlement-id="${settlement.id}" data-from-username="${escapedUsername}">
         <i class="bi bi-x-circle me-1"></i>Reject
       </button>
     `;
@@ -1414,7 +1422,7 @@ function renderDesktopTable(items, user, currentGroup = null) {
       const isPayer = expense.payer_id === user.id;
       const isGroupOwner = currentGroup && currentGroup.owner_id === user.id;
       const isOwner = isPayer || isGroupOwner;
-      const userSplit = expense.splits?.find(s => (s.userId._id || s.userId || s.user_id) === user.id);
+      const userSplit = expense.splits?.find(s => (s.userId?._id || s.userId || s.user_id) === user.id);
       const userShare = userSplit ? (userSplit.shareAmount || userSplit.share_amount) : 0;
 
       // Calculate if user lent money (paid more than share) or owes money (paid less than share)
@@ -1491,7 +1499,7 @@ function renderDesktopTable(items, user, currentGroup = null) {
             <button class="btn btn-sm btn-outline-primary edit-btn" data-id="${expense.id}" ${!isOwner ? "disabled" : ""} title="Edit expense">
               <i class="bi bi-pencil"></i>
                 </button>
-            <button class="btn btn-sm btn-outline-danger" ${!isOwner ? "disabled" : ""} onclick="deleteExpense(${expense.id})" title="Delete expense">
+            <button class="btn btn-sm btn-outline-danger delete-btn" data-id="${expense.id}" ${!isOwner ? "disabled" : ""} title="Delete expense">
               <i class="bi bi-trash"></i>
                 </button>
           </div>
@@ -1526,7 +1534,7 @@ function renderMobileCards(items, user, currentGroup = null) {
       const isPayer = expense.payer_id === user.id;
       const isGroupOwner = currentGroup && currentGroup.owner_id === user.id;
       const isOwner = isPayer || isGroupOwner;
-      const userSplit = expense.splits?.find(s => (s.userId._id || s.userId || s.user_id) === user.id);
+      const userSplit = expense.splits?.find(s => (s.userId?._id || s.userId || s.user_id) === user.id);
       const userShare = userSplit ? (userSplit.shareAmount || userSplit.share_amount) : 0;
 
       // Calculate if user lent money (paid more than share) or owes money (paid less than share)
@@ -1672,10 +1680,10 @@ function showExpenseDetailModal(expense, user) {
                 <button class="btn btn-link p-1 me-2" title="Add photo">
                   <i class="bi bi-camera fs-5"></i>
                 </button>
-                <button class="btn btn-link p-1 me-2" title="Delete" ${!isOwner ? "disabled" : ""} onclick="deleteExpense(${expense.id})">
+                <button class="btn btn-link p-1 me-2 delete-expense-btn" data-id="${expense.id}" ${!isOwner ? "disabled" : ""} title="Delete">
                   <i class="bi bi-trash fs-5 text-danger"></i>
                 </button>
-                <button class="btn btn-link p-1" title="Edit" ${!isOwner ? "disabled" : ""} onclick="handleEditExpense(${expense.id})">
+                <button class="btn btn-link p-1 edit-expense-btn" data-id="${expense.id}" ${!isOwner ? "disabled" : ""} title="Edit">
                   <i class="bi bi-pencil fs-5 text-primary"></i>
                 </button>
               </div>
@@ -1690,8 +1698,8 @@ function showExpenseDetailModal(expense, user) {
               <div class="display-6 fw-bold text-primary mb-3">${Number(expense.amount).toFixed(2)} ${expense.currency}</div>
               
               <div class="text-muted small mb-2">
-                <div>Added by ${expense.added_by_username || "Unknown"} on ${createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
-                <div>Updated by ${expense.added_by_username || "Unknown"} on ${updatedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                <div>Added by ${escapeHtml(expense.added_by_username || "Unknown")} on ${createdDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+                <div>Updated by ${escapeHtml(expense.added_by_username || "Unknown")} on ${updatedDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
               </div>
             </div>
             
@@ -1754,10 +1762,16 @@ function showExpenseDetailModal(expense, user) {
 // -----------------------------
 async function handleEditExpense(expenseId) {
   try {
+    if (!expenseId) {
+      console.error("No expense ID provided");
+      showError("Invalid expense ID");
+      return;
+    }
+    
     console.log("📝 Editing expense:", expenseId);
 
     // Find expense locally first
-    let expense = allExpenses.find(e => e.id === expenseId);
+    let expense = allExpenses.find(e => e.id === expenseId || e.id === String(expenseId) || String(e.id) === String(expenseId));
 
     if (!expense) {
       // Try to fetch it if not found in local list
@@ -1765,22 +1779,32 @@ async function handleEditExpense(expenseId) {
         const res = await fetch(`${API_URL}/expenses/exp/${expenseId}`, { headers: getHeaders() });
         if (res.ok) {
           expense = await res.json();
+        } else {
+          const error = await res.json().catch(() => ({ detail: "Failed to fetch expense" }));
+          showError(error?.detail || "Expense not found");
+          return;
         }
       } catch (e) {
-        console.error(e);
+        console.error("Error fetching expense:", e);
+        showError("Failed to load expense details");
+        return;
       }
     }
 
     if (!expense) {
-      return showError("Expense not found");
+      showError("Expense not found");
+      return;
     }
 
     openEditExpenseModalWithData(expense);
   } catch (err) {
     console.error("Error handling edit expense:", err);
-    showError("Failed to open edit modal");
+    showError("Failed to open edit modal: " + err.message);
   }
 }
+
+// Make handleEditExpense globally accessible
+window.handleEditExpense = handleEditExpense;
 
 async function openEditExpenseModalWithData(expense) {
   try {
@@ -1906,20 +1930,51 @@ async function submitEditExpense() {
       const ids = Array.from(checked).map(c => c.value);
       if (ids.length === 0) return showError("Select at least one member");
       const share = amount / ids.length;
-      splits = ids.map(id => ({ user_id: id, share_amount: share }));
+      // Backend expects userId and shareAmount (camelCase)
+      splits = ids.map(id => ({ userId: id, shareAmount: share }));
+    } else if (splitType === 'percentage') {
+      const percentageInputs = document.querySelectorAll('#percentageSplitMembers input[type="number"]');
+      percentageInputs.forEach(input => {
+        const userId = input.dataset.userId || input.closest('[data-user-id]')?.dataset.userId;
+        const percentage = parseFloat(input.value) || 0;
+        if (userId && percentage > 0) {
+          const shareAmount = (amount * percentage) / 100;
+          splits.push({ userId, shareAmount });
+        }
+      });
+    } else if (splitType === 'custom') {
+      const customInputs = document.querySelectorAll('#customSplitMembers input[type="number"]');
+      customInputs.forEach(input => {
+        const userId = input.dataset.userId || input.closest('[data-user-id]')?.dataset.userId;
+        const shareAmount = parseFloat(input.value) || 0;
+        if (userId && shareAmount > 0) {
+          splits.push({ userId, shareAmount });
+        }
+      });
     }
 
-    // Minimal payload for now
+    // Validate splits total matches amount (allow small rounding differences)
+    if (splits.length > 0) {
+      const totalSplit = splits.reduce((sum, s) => sum + (s.shareAmount || 0), 0);
+      const difference = Math.abs(amount - totalSplit);
+      if (difference > 0.01) {
+        return showError(`Split amounts (${totalSplit.toFixed(2)}) must equal expense amount (${amount.toFixed(2)})`);
+      }
+    }
+
+    // Backend expects walletId (camelCase), not wallet_id
     const payload = {
       description,
       amount,
       category,
-      wallet_id: walletId || null,
-      note,
+      walletId: walletId || null,
+      note: note || null,
       splitType,
-      splits
+      splits: splits.length > 0 ? splits : undefined
     };
 
+    console.log("📤 Sending update payload:", payload);
+    
     const res = await fetch(`${API_URL}/expenses/${expenseId}`, {
       method: 'PUT',
       headers: getHeaders(),
@@ -1927,8 +1982,33 @@ async function submitEditExpense() {
     });
 
     if (!res.ok) {
-      const err = await res.json();
-      throw new Error(err.detail || "Failed to update expense");
+      const errorText = await res.text();
+      let errorMessage = "Failed to update expense";
+      
+      try {
+        const err = JSON.parse(errorText);
+        console.error("❌ Full error response:", err);
+        
+        // Handle validation errors from Joi
+        if (err.errors && Array.isArray(err.errors)) {
+          errorMessage = err.errors.map(e => `${e.field || ''}: ${e.message || ''}`).join('; ');
+        } else if (err.message) {
+          errorMessage = err.message;
+        } else if (err.detail) {
+          // Handle FastAPI-style errors
+          if (Array.isArray(err.detail)) {
+            errorMessage = err.detail.map(e => `${e.loc?.join('.') || ''}: ${e.msg}`).join('; ');
+          } else {
+            errorMessage = err.detail;
+          }
+        }
+      } catch (e) {
+        // If not JSON, use the text
+        if (errorText) errorMessage = errorText;
+      }
+      
+      console.error("❌ Update error:", errorMessage);
+      throw new Error(errorMessage);
     }
 
     showSuccess("Expense updated!");
@@ -1972,7 +2052,7 @@ async function openExpenseModal(expenseId) {
 
     modalTitle.textContent = e.description;
 
-    const participants = (e.splits || []).map(s => `${s.username}: ${s.share_amount} ${e.currency}`).join("<br>");
+    const participants = (e.splits || []).map(s => `${s.username}: ${Number(s.share_amount).toFixed(2)} ${e.currency}`).join("<br>");
 
     modalBody.innerHTML = `
       <p><b>Amount:</b> ${Number(e.amount).toFixed(2)} ${e.currency}</p>
@@ -1983,7 +2063,7 @@ async function openExpenseModal(expenseId) {
             <strong>Note:</strong> ${e.note || " "}
       </div>
 
-      <p class="text-muted"><small>Added by ${e.added_by_username} on ${new Date(e.created_at).toLocaleString()}</small></p>
+      <p class="text-muted"><small>Added by ${escapeHtml(e.added_by_username || "Unknown")} on ${new Date(e.created_at).toLocaleString()}</small></p>
     `;
 
     // Buttons - Check if user is payer OR group owner
@@ -1991,8 +2071,8 @@ async function openExpenseModal(expenseId) {
     const isGroupOwner = currentGroup && currentGroup.owner_id === curentuser.id;
     const isOwner = isPayer || isGroupOwner;
     modalFooter.innerHTML = `
-      <button class="btn btn-primary" ${!isOwner ? "disabled" : ""} onclick="handleEditExpense(${e.id})">Edit</button>
-      <button class="btn btn-danger" ${!isOwner ? "disabled" : ""} onclick="deleteExpense(${e.id})">Delete</button>
+      <button class="btn btn-primary edit-expense-btn" data-id="${e.id}" ${!isOwner ? "disabled" : ""}>Edit</button>
+      <button class="btn btn-danger delete-expense-btn" data-id="${e.id}" ${!isOwner ? "disabled" : ""}>Delete</button>
     `;
 
     // Wait for DOM to be ready before showing modal
@@ -2234,16 +2314,43 @@ async function initializeExpenseModal() {
 // Delete expense
 // -----------------------------
 async function deleteExpense(expenseId) {
-  if (!confirm("Delete this expense?")) return;
-  const res = await fetch(`${API_URL}/expenses/${expenseId}`, { method: "DELETE", headers: getHeaders() });
-  if (res.ok) {
-    await loadExpenses(true); // Reset pagination and reload
-  } else {
-    const e = await res.json().catch(() => null);
-    alert(e?.detail || "Delete failed");
-
+  if (!expenseId) {
+    console.error("No expense ID provided");
+    showError("Invalid expense ID");
+    return;
+  }
+  
+  if (!confirm("Are you sure you want to delete this expense?")) return;
+  
+  try {
+    console.log("🗑️ Deleting expense:", expenseId);
+    const res = await fetch(`${API_URL}/expenses/${expenseId}`, { 
+      method: "DELETE", 
+      headers: getHeaders() 
+    });
+    
+    if (res.ok) {
+      showSuccess("Expense deleted successfully");
+      await loadExpenses(true); // Reset pagination and reload
+      
+      // Close any open modals
+      const modals = document.querySelectorAll('.modal.show');
+      modals.forEach(modal => {
+        const bsModal = bootstrap.Modal.getInstance(modal);
+        if (bsModal) bsModal.hide();
+      });
+    } else {
+      const e = await res.json().catch(() => ({ detail: "Delete failed" }));
+      showError(e?.detail || e?.message || "Failed to delete expense");
+    }
+  } catch (err) {
+    console.error("Error deleting expense:", err);
+    showError("Failed to delete expense: " + err.message);
   }
 }
+
+// Make deleteExpense globally accessible
+window.deleteExpense = deleteExpense;
 
 // -----------------------------
 // Friends list for add-member modal (improved design)
@@ -2410,10 +2517,10 @@ function renderMembersTable(container, members) {
       </td>
       <td>
         <div class="btn-group" role="group">
-          <button class="btn btn-sm btn-outline-warning" onclick="toggleAdmin(${m.user_id}, ${!m.is_admin})" title="Toggle Admin">
+          <button class="btn btn-sm btn-outline-warning toggle-admin-btn" data-member-id="${m.user_id}" data-new-status="${!m.is_admin}" title="Toggle Admin">
             <i class="bi bi-shield-check"></i>
           </button>
-          <button class="btn btn-sm btn-outline-danger" onclick="deleteMember(${m.user_id})" title="Remove Member">
+          <button class="btn btn-sm btn-outline-danger delete-member-btn" data-member-id="${m.user_id}" title="Remove Member">
             <i class="bi bi-trash"></i>
           </button>
         </div>
@@ -2464,10 +2571,10 @@ function renderMembersMobileCards(container, members) {
         
         <div class="mt-auto">
           <div class="btn-group w-100" role="group">
-            <button class="btn btn-outline-warning btn-sm" onclick="toggleAdmin(${m.user_id}, ${!m.is_admin})" title="Toggle Admin">
+            <button class="btn btn-outline-warning btn-sm toggle-admin-btn" data-member-id="${m.user_id}" data-new-status="${!m.is_admin}" title="Toggle Admin">
               <i class="bi bi-shield-check"></i> ${m.is_admin ? 'Remove Admin' : 'Make Admin'}
             </button>
-            <button class="btn btn-outline-danger btn-sm" onclick="deleteMember(${m.user_id})" title="Remove Member">
+            <button class="btn btn-outline-danger btn-sm delete-member-btn" data-member-id="${m.user_id}" title="Remove Member">
               <i class="bi bi-trash"></i> Remove
             </button>
           </div>
@@ -2570,11 +2677,11 @@ function renderMembersMobileCards(container, members) {
         </div>
       </div>
       <div class="member-actions">
-        <button class="btn btn-outline-warning btn-sm" onclick="toggleAdmin(${member.user_id}, ${!member.is_admin})">
+        <button class="btn btn-outline-warning btn-sm toggle-admin-btn" data-member-id="${member.user_id}" data-new-status="${!member.is_admin}">
           <i class="bi bi-shield-${member.is_admin ? 'minus' : 'plus'}"></i>
           ${member.is_admin ? 'Remove Admin' : 'Make Admin'}
         </button>
-        <button class="btn btn-outline-danger btn-sm" onclick="deleteMember(${member.user_id})">
+        <button class="btn btn-outline-danger btn-sm delete-member-btn" data-member-id="${member.user_id}">
           <i class="bi bi-trash"></i> Remove
         </button>
       </div>
@@ -2783,8 +2890,9 @@ async function renderGroupMembersForManage() {
           const adminAction = isAdmin ? 'false' : 'true';
 
           actionBtns += `
-              <button class="btn btn-icon btn-sm me-1" 
-                      onclick="toggleMemberAdmin(${member.user_id}, ${adminAction})" 
+              <button class="btn btn-icon btn-sm me-1 toggle-member-admin-btn" 
+                      data-membership-id="${member.user_id}" 
+                      data-make-admin="${adminAction}"
                       title="${adminTitle}">
                 <i class="bi ${adminIcon} fs-5"></i>
               </button>
@@ -2792,8 +2900,9 @@ async function renderGroupMembersForManage() {
 
           // Remove Member Button
           actionBtns += `
-              <button class="btn btn-icon btn-sm text-danger" 
-                      onclick="removeMember(${member.user_id})" title="Remove Member">
+              <button class="btn btn-icon btn-sm text-danger remove-member-btn" 
+                      data-membership-id="${member.user_id}" 
+                      title="Remove Member">
                 <i class="bi bi-trash fs-5"></i>
               </button>
             `;
@@ -3305,14 +3414,120 @@ function deselectAllAddMembers() {
 
 
 // -----------------------------
-// Attach edit button events
+// Attach edit and delete button events
 // -----------------------------
 document.addEventListener("click", async (e) => {
-  const btn = e.target.closest(".edit-btn");
-  if (!btn) return;
+  // Handle edit buttons (both .edit-btn and .edit-expense-btn)
+  const editBtn = e.target.closest(".edit-btn, .edit-expense-btn");
+  if (editBtn && !editBtn.disabled) {
+    const id = editBtn.dataset.id;
+    if (id) {
+      e.preventDefault();
+      e.stopPropagation();
+      handleEditExpense(id);
+    }
+    return;
+  }
 
-  const id = btn.dataset.id;
-  if (id) handleEditExpense(id);
+  // Handle delete buttons (both inline onclick and .delete-expense-btn)
+  const deleteBtn = e.target.closest(".delete-expense-btn, .delete-btn");
+  if (deleteBtn && !deleteBtn.disabled) {
+    const id = deleteBtn.dataset.id;
+    if (id) {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteExpense(id);
+    }
+    return;
+  }
+
+  // Handle view settlement detail button
+  const viewSettlementBtn = e.target.closest(".view-settlement-btn");
+  if (viewSettlementBtn) {
+    const settlementId = viewSettlementBtn.dataset.settlementId;
+    if (settlementId) {
+      e.preventDefault();
+      e.stopPropagation();
+      showSettlementDetail(settlementId);
+    }
+    return;
+  }
+
+  // Handle accept settlement from expenses button
+  const acceptSettlementBtn = e.target.closest(".accept-settlement-expense-btn");
+  if (acceptSettlementBtn) {
+    const settlementId = acceptSettlementBtn.dataset.settlementId;
+    const fromUsername = acceptSettlementBtn.dataset.fromUsername;
+    if (settlementId) {
+      e.preventDefault();
+      e.stopPropagation();
+      acceptSettlementFromExpenses(settlementId, fromUsername);
+    }
+    return;
+  }
+
+  // Handle reject settlement from expenses button
+  const rejectSettlementBtn = e.target.closest(".reject-settlement-expense-btn");
+  if (rejectSettlementBtn) {
+    const settlementId = rejectSettlementBtn.dataset.settlementId;
+    const fromUsername = rejectSettlementBtn.dataset.fromUsername;
+    if (settlementId) {
+      e.preventDefault();
+      e.stopPropagation();
+      rejectSettlementFromExpenses(settlementId, fromUsername);
+    }
+    return;
+  }
+
+  // Handle toggle admin button
+  const toggleAdminBtn = e.target.closest(".toggle-admin-btn");
+  if (toggleAdminBtn) {
+    const memberId = toggleAdminBtn.dataset.memberId;
+    const newStatus = toggleAdminBtn.dataset.newStatus === 'true';
+    if (memberId) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleAdmin(memberId, newStatus);
+    }
+    return;
+  }
+
+  // Handle delete member button
+  const deleteMemberBtn = e.target.closest(".delete-member-btn");
+  if (deleteMemberBtn) {
+    const memberId = deleteMemberBtn.dataset.memberId;
+    if (memberId) {
+      e.preventDefault();
+      e.stopPropagation();
+      deleteMember(memberId);
+    }
+    return;
+  }
+
+  // Handle toggle member admin button
+  const toggleMemberAdminBtn = e.target.closest(".toggle-member-admin-btn");
+  if (toggleMemberAdminBtn) {
+    const membershipId = toggleMemberAdminBtn.dataset.membershipId;
+    const makeAdmin = toggleMemberAdminBtn.dataset.makeAdmin === 'true';
+    if (membershipId) {
+      e.preventDefault();
+      e.stopPropagation();
+      toggleMemberAdmin(membershipId, makeAdmin);
+    }
+    return;
+  }
+
+  // Handle remove member button
+  const removeMemberBtn = e.target.closest(".remove-member-btn");
+  if (removeMemberBtn) {
+    const membershipId = removeMemberBtn.dataset.membershipId;
+    if (membershipId) {
+      e.preventDefault();
+      e.stopPropagation();
+      removeMember(membershipId);
+    }
+    return;
+  }
 });
 
 // -----------------------------

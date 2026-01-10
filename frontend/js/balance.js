@@ -251,6 +251,16 @@ function updateSummaryStats(balances) {
 }
 
 // -----------------------------
+// Helper function to escape HTML (for safe string insertion)
+// -----------------------------
+function escapeHtml(str) {
+  if (!str) return '';
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+// -----------------------------
 // Load Balances
 // -----------------------------
 async function loadBalances() {
@@ -327,6 +337,9 @@ async function loadBalances() {
       const status = balance.net > 0 ? "Lent" : balance.net < 0 ? "Owes" : "Even";
 
       const isCurrentUser = currentUser && balance.user_id === currentUser.id;
+      
+      // Escape username to prevent XSS
+      const username = escapeHtml(balance.username || 'Unknown');
 
       // Check if we're in hybrid mode and have original/adjustment data
       const isHybridMode = balance.original_net !== undefined && balance.original_net !== null;
@@ -369,7 +382,7 @@ async function loadBalances() {
         <div class="card border-${color} balance-card shadow-sm h-100 ${isCurrentUser ? 'border-3' : ''}">
           <div class="card-body text-center p-3">
             <div class="d-flex justify-content-between align-items-center mb-2">
-              <h6 class="card-title mb-0 fw-bold">${balance.username}</h6>
+              <h6 class="card-title mb-0 fw-bold">${username}</h6>
               ${isCurrentUser ? '<span class="badge bg-primary">You</span>' : ''}
             </div>
             <div class="mb-2">
@@ -395,12 +408,18 @@ async function loadBalances() {
       <div class="col-12 text-center text-danger py-4">
         <i class="bi bi-exclamation-triangle fs-1 mb-3"></i>
         <h5>Error loading balances</h5>
-        <p style="white-space: pre-line;">${errorMessage}</p>
-        <button class="btn btn-outline-primary" onclick="loadBalances()">
+        <p style="white-space: pre-line;">${escapeHtml(errorMessage)}</p>
+        <button class="btn btn-outline-primary retry-balances-btn">
           <i class="bi bi-arrow-clockwise me-1"></i>Retry
         </button>
       </div>
     `;
+    
+    // Attach retry button event listener
+    const retryBtn = container.querySelector('.retry-balances-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => loadBalances());
+    }
   }
 }
 
@@ -466,13 +485,26 @@ async function loadSettlements() {
 
     data.forEach((settlement) => {
       const row = document.createElement("tr");
+      
+      // Escape strings to prevent XSS and syntax errors
+      const escapeHtml = (str) => {
+        if (!str) return '';
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+      };
+      
+      const fromUsername = escapeHtml(settlement.from_username || 'Unknown');
+      const toUsername = escapeHtml(settlement.to_username || 'Unknown');
+      const amount = parseFloat(settlement.amount) || 0;
+      
       row.innerHTML = `
         <td>
           <div class="d-flex align-items-center">
             <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
               <i class="bi bi-person"></i>
             </div>
-            <span class="fw-semibold">${settlement.from_username}</span>
+            <span class="fw-semibold">${fromUsername}</span>
           </div>
         </td>
         <td>
@@ -480,21 +512,38 @@ async function loadSettlements() {
             <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2" style="width: 32px; height: 32px;">
               <i class="bi bi-person-check"></i>
             </div>
-            <span class="fw-semibold">${settlement.to_username}</span>
+            <span class="fw-semibold">${toUsername}</span>
           </div>
         </td>
         <td>
           <span class="badge bg-warning text-dark fs-6">
-            ${formatCurrency(settlement.amount)} MAD
+            ${formatCurrency(amount)} MAD
           </span>
         </td>
         <td>
-          <button class="btn btn-outline-primary btn-sm" onclick="quickSettle('${settlement.from_username}', '${settlement.to_username}', ${settlement.amount})">
+          <button class="btn btn-outline-primary btn-sm quick-settle-btn" 
+                  data-from-username="${fromUsername}" 
+                  data-to-username="${toUsername}" 
+                  data-amount="${amount}">
             <i class="bi bi-lightning me-1"></i>Quick Settle
           </button>
         </td>
       `;
       tbody.appendChild(row);
+    });
+    
+    // Attach event listeners to quick settle buttons
+    tbody.querySelectorAll('.quick-settle-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const fromUsername = btn.getAttribute('data-from-username');
+        const toUsername = btn.getAttribute('data-to-username');
+        const amount = parseFloat(btn.getAttribute('data-amount') || '0');
+        if (fromUsername && toUsername) {
+          quickSettle(fromUsername, toUsername, amount);
+        }
+      });
     });
   } catch (err) {
     console.error("❌ Error loading settlements:", err);
@@ -509,13 +558,19 @@ async function loadSettlements() {
         <td colspan="4" class="text-center text-danger py-4">
           <i class="bi bi-exclamation-triangle fs-1 mb-3"></i>
           <h5>Error loading settlements</h5>
-          <p>${errorMessage}</p>
-          <button class="btn btn-outline-primary" onclick="loadSettlements()">
+          <p>${escapeHtml(errorMessage)}</p>
+          <button class="btn btn-outline-primary retry-settlements-btn">
             <i class="bi bi-arrow-clockwise me-1"></i>Retry
           </button>
         </td>
       </tr>
     `;
+    
+    // Attach retry button event listener
+    const retryBtn = tbody.querySelector('.retry-settlements-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => loadSettlements());
+    }
   }
 }
 
@@ -579,40 +634,57 @@ async function loadHistory() {
     // Update history count
     document.getElementById('historyCount').textContent = `${data.length} records`;
 
+    // Helper function to escape HTML
+    const escapeHtml = (str) => {
+      if (!str) return '';
+      const div = document.createElement('div');
+      div.textContent = str;
+      return div.innerHTML;
+    };
+
     data.forEach((settlement) => {
       const statusBadge = getStatusBadge(settlement.status);
       const isFromCurrentUser = settlement.from_user_id === currentUser.id;
       const isToCurrentUser = settlement.to_user_id === currentUser.id;
 
-      // Show action buttons based on status and user role
-      let actionButtons = '';
+      // Escape usernames and other text
+      const fromUsername = escapeHtml(settlement.from_username || 'Unknown');
+      const toUsername = escapeHtml(settlement.to_username || 'Unknown');
+      const rejectedReason = escapeHtml(settlement.rejected_reason || '');
+
+      const row = document.createElement("tr");
+      
+      // Build action buttons HTML without inline onclick
+      let actionButtonsHtml = '';
       if (settlement.status === 'pending' && isToCurrentUser) {
         // User is recipient and can accept/reject
-        actionButtons = `
-          <button class="btn btn-sm btn-success me-1" onclick="acceptSettlement(${settlement.id})">
+        actionButtonsHtml = `
+          <button class="btn btn-sm btn-success me-1 accept-settlement-btn" data-settlement-id="${settlement.id}">
             <i class="bi bi-check-circle me-1"></i>Accept
           </button>
-          <button class="btn btn-sm btn-danger" onclick="rejectSettlement(${settlement.id})">
+          <button class="btn btn-sm btn-danger reject-settlement-btn" data-settlement-id="${settlement.id}">
             <i class="bi bi-x-circle me-1"></i>Reject
           </button>
         `;
       } else if (settlement.status === 'rejected' && isFromCurrentUser) {
         // User is sender and can resend rejected settlement
-        actionButtons = `
-          <button class="btn btn-sm btn-outline-primary" onclick="resendSettlement(${settlement.id}, ${settlement.to_user_id}, ${settlement.amount})">
+        actionButtonsHtml = `
+          <button class="btn btn-sm btn-outline-primary resend-settlement-btn" 
+                  data-settlement-id="${settlement.id}" 
+                  data-to-user-id="${settlement.to_user_id}" 
+                  data-amount="${settlement.amount}">
             <i class="bi bi-arrow-repeat me-1"></i>Resend
           </button>
         `;
       }
 
-      const row = document.createElement("tr");
       row.innerHTML = `
         <td>
           <div class="d-flex align-items-center">
             <div class="rounded-circle bg-danger text-white d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
               <i class="bi bi-person" style="font-size: 0.75rem;"></i>
             </div>
-            <span>${settlement.from_username}</span>
+            <span>${fromUsername}</span>
           </div>
         </td>
         <td>
@@ -620,7 +692,7 @@ async function loadHistory() {
             <div class="rounded-circle bg-success text-white d-flex align-items-center justify-content-center me-2" style="width: 28px; height: 28px;">
               <i class="bi bi-person-check" style="font-size: 0.75rem;"></i>
             </div>
-            <span>${settlement.to_username}</span>
+            <span>${toUsername}</span>
           </div>
         </td>
         <td>
@@ -630,16 +702,52 @@ async function loadHistory() {
         </td>
         <td>
           ${statusBadge}
-          ${settlement.rejected_reason ? `<br><small class="text-muted">Reason: ${settlement.rejected_reason}</small>` : ''}
+          ${rejectedReason ? `<br><small class="text-muted">Reason: ${rejectedReason}</small>` : ''}
         </td>
         <td>
           <small class="text-muted">${getRelativeTime(settlement.created_at)}</small>
         </td>
         <td>
-          ${actionButtons}
+          ${actionButtonsHtml}
         </td>
       `;
       tbody.appendChild(row);
+    });
+    
+    // Attach event listeners to action buttons
+    tbody.querySelectorAll('.accept-settlement-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const settlementId = btn.getAttribute('data-settlement-id');
+        if (settlementId) {
+          acceptSettlement(settlementId);
+        }
+      });
+    });
+    
+    tbody.querySelectorAll('.reject-settlement-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const settlementId = btn.getAttribute('data-settlement-id');
+        if (settlementId) {
+          rejectSettlement(settlementId);
+        }
+      });
+    });
+    
+    tbody.querySelectorAll('.resend-settlement-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const settlementId = btn.getAttribute('data-settlement-id');
+        const toUserId = btn.getAttribute('data-to-user-id');
+        const amount = parseFloat(btn.getAttribute('data-amount') || '0');
+        if (settlementId && toUserId) {
+          resendSettlement(settlementId, toUserId, amount);
+        }
+      });
     });
   } catch (err) {
     console.error("❌ Error loading history:", err);
@@ -654,13 +762,19 @@ async function loadHistory() {
         <td colspan="6" class="text-center text-danger py-4">
           <i class="bi bi-exclamation-triangle fs-1 mb-3"></i>
           <h5>Error loading history</h5>
-          <p>${errorMessage}</p>
-          <button class="btn btn-outline-primary" onclick="loadHistory()">
+          <p>${escapeHtml(errorMessage)}</p>
+          <button class="btn btn-outline-primary retry-history-btn">
             <i class="bi bi-arrow-clockwise me-1"></i>Retry
           </button>
         </td>
       </tr>
     `;
+    
+    // Attach retry button event listener
+    const retryBtn = tbody.querySelector('.retry-history-btn');
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => loadHistory());
+    }
   }
 }
 
@@ -796,13 +910,31 @@ function updateNewSettlementPreview(amount, recipientName) {
 }
 
 function updateSettlementPreview(userName, amount) {
-  const preview = document.getElementById("settlementPreview");
-  const previewAmount = document.getElementById("previewAmount");
-  const previewUser = document.getElementById("previewUser");
+  // Use the correct element IDs from the modal
+  const previewAmountDisplay = document.getElementById("previewAmountDisplay");
+  const previewRecipientName = document.getElementById("previewRecipientName");
+  const previewRecipientText = document.getElementById("previewRecipientText");
+  const previewAmountText = document.getElementById("previewAmountText");
+  const previewRecipientAvatar = document.getElementById("previewRecipientAvatar");
 
-  previewAmount.textContent = `${formatCurrency(parseFloat(amount))} MAD`;
-  previewUser.textContent = userName;
-  preview.style.display = "block";
+  if (previewAmountDisplay) {
+    previewAmountDisplay.textContent = `${formatCurrency(parseFloat(amount))} MAD`;
+  }
+  if (previewRecipientName) {
+    previewRecipientName.textContent = userName || "Recipient";
+  }
+  if (previewRecipientText) {
+    previewRecipientText.textContent = userName || "...";
+  }
+  if (previewAmountText) {
+    previewAmountText.textContent = `${formatCurrency(parseFloat(amount))} MAD`;
+  }
+  if (previewRecipientAvatar && userName) {
+    const initials = userName.split(" ").map(w => w[0]).join("").toUpperCase().substring(0, 2);
+    previewRecipientAvatar.textContent = initials;
+    previewRecipientAvatar.classList.remove("bg-secondary");
+    previewRecipientAvatar.classList.add("bg-success");
+  }
 }
 
 // Quick settle function
@@ -836,10 +968,21 @@ function quickSettle(fromUser, toUser, amount) {
 
   // Wait for modal to be ready, then pre-fill
   setTimeout(() => {
-    select.value = toUserData.user_id;
-    amountInput.value = amount.toFixed(2);
-    updateSettlementPreview(toUser, amount.toFixed(2));
-  }, 300);
+    if (select && toUserData.user_id) {
+      select.value = toUserData.user_id;
+      // Trigger change event to update preview
+      const changeEvent = new Event('change', { bubbles: true });
+      select.dispatchEvent(changeEvent);
+    }
+    if (amountInput) {
+      amountInput.value = amount.toFixed(2);
+      // Trigger input event to update preview
+      const inputEvent = new Event('input', { bubbles: true });
+      amountInput.dispatchEvent(inputEvent);
+    }
+    // Manually update preview with username (using the correct function)
+    updateNewSettlementPreview(amount.toFixed(2), toUserData.username);
+  }, 500); // Increased timeout to ensure modal is fully rendered
 }
 
 // -----------------------------
@@ -867,7 +1010,7 @@ function setupSettlementForm() {
 
     const messageInput = document.getElementById("settlementMessage");
     const payload = {
-      to_user_id: parseInt(select.value),
+      toUserId: select.value, // Backend expects camelCase and string (ObjectId), not integer
       amount: parseFloat(amountInput.value),
       message: messageInput ? messageInput.value.trim() || null : null,
     };
@@ -944,9 +1087,10 @@ async function loadSettlementMode() {
     }
 
     // Get current user to check their mode preference
-    if (currentUser && currentUser.global_settlement_mode) {
-      const mode = currentUser.global_settlement_mode;
-      const radio = document.querySelector(`input[name="settlementMode"][value="${mode}"]`);
+    // Handle both camelCase and snake_case field names
+    const userMode = currentUser?.globalSettlementMode || currentUser?.global_settlement_mode;
+    if (userMode) {
+      const radio = document.querySelector(`input[name="settlementMode"][value="${userMode}"]`);
       if (radio) {
         radio.checked = true;
       }
@@ -966,25 +1110,32 @@ async function updateSettlementMode(mode) {
       throw new Error("API configuration not loaded");
     }
 
-    const url = `${API_URL}/users/user/me/global-settlement-mode`;
+    // Use the auth/me endpoint to update profile including globalSettlementMode
+    const url = `${API_URL}/auth/me`;
     const res = await fetch(url, {
       method: "PUT",
       headers: getHeaders(),
-      body: JSON.stringify({ mode: mode })
+      body: JSON.stringify({ globalSettlementMode: mode })
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.detail || "Failed to update mode");
+      const errorData = await res.json().catch(() => ({ message: "Failed to update mode" }));
+      throw new Error(errorData.detail || errorData.message || "Failed to update mode");
     }
 
-    const updatedUser = await res.json();
+    const response = await res.json();
+    // Auth endpoint returns { success: true, data: { user } }
+    const updatedUser = response.data?.user || response.user || response;
     console.log("✅ Mode updated. Updated user:", updatedUser);
-    console.log("✅ New mode:", updatedUser.global_settlement_mode);
+    
+    // Handle both camelCase and snake_case field names
+    const newMode = updatedUser.globalSettlementMode || updatedUser.global_settlement_mode;
+    console.log("✅ New mode:", newMode);
 
     if (currentUser) {
-      currentUser.global_settlement_mode = updatedUser.global_settlement_mode;
-      console.log("✅ Current user mode updated to:", currentUser.global_settlement_mode);
+      currentUser.globalSettlementMode = newMode;
+      currentUser.global_settlement_mode = newMode; // Also set snake_case for compatibility
+      console.log("✅ Current user mode updated to:", currentUser.globalSettlementMode);
     }
 
     showSuccess("Settlement mode updated! Reloading balances...");
@@ -1084,6 +1235,18 @@ document.addEventListener("DOMContentLoaded", async () => {
 // Accept Settlement
 // -----------------------------
 async function acceptSettlement(settlementId) {
+  // Handle string IDs - ensure it's a valid string
+  if (typeof settlementId !== 'string') {
+    settlementId = String(settlementId);
+  }
+  // Remove any quotes or special characters that might cause issues
+  settlementId = settlementId.replace(/['"]/g, '').trim();
+  
+  if (!settlementId) {
+    showError("Invalid settlement ID");
+    return;
+  }
+  
   if (!confirm("Are you sure you want to accept this settlement?")) {
     return;
   }
@@ -1107,8 +1270,23 @@ async function acceptSettlement(settlementId) {
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.detail || "Failed to accept settlement");
+      const errorText = await res.text();
+      let errorMessage = "Failed to accept settlement";
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+        
+        // Handle validation errors
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          errorMessage = errorData.errors.map(e => `${e.field || ''}: ${e.message || ''}`).join('; ');
+        }
+      } catch (e) {
+        if (errorText) errorMessage = errorText;
+      }
+      
+      console.error("❌ Accept settlement error:", errorMessage);
+      throw new Error(errorMessage);
     }
 
     showSuccess("Settlement accepted successfully!");
@@ -1123,6 +1301,18 @@ async function acceptSettlement(settlementId) {
 // Reject Settlement
 // -----------------------------
 async function rejectSettlement(settlementId) {
+  // Handle string IDs - ensure it's a valid string
+  if (typeof settlementId !== 'string') {
+    settlementId = String(settlementId);
+  }
+  // Remove any quotes or special characters that might cause issues
+  settlementId = settlementId.replace(/['"]/g, '').trim();
+  
+  if (!settlementId) {
+    showError("Invalid settlement ID");
+    return;
+  }
+  
   const reason = prompt("Please provide a reason for rejecting this settlement (optional):");
 
   if (reason === null) {
@@ -1151,8 +1341,23 @@ async function rejectSettlement(settlementId) {
     });
 
     if (!res.ok) {
-      const errorData = await res.json();
-      throw new Error(errorData.detail || "Failed to reject settlement");
+      const errorText = await res.text();
+      let errorMessage = "Failed to reject settlement";
+      
+      try {
+        const errorData = JSON.parse(errorText);
+        errorMessage = errorData.detail || errorData.message || errorMessage;
+        
+        // Handle validation errors
+        if (errorData.errors && Array.isArray(errorData.errors)) {
+          errorMessage = errorData.errors.map(e => `${e.field || ''}: ${e.message || ''}`).join('; ');
+        }
+      } catch (e) {
+        if (errorText) errorMessage = errorText;
+      }
+      
+      console.error("❌ Reject settlement error:", errorMessage);
+      throw new Error(errorMessage);
     }
 
     showSuccess("Settlement rejected.");
@@ -1163,10 +1368,32 @@ async function rejectSettlement(settlementId) {
   }
 }
 
+// Make functions globally accessible
+window.acceptSettlement = acceptSettlement;
+window.rejectSettlement = rejectSettlement;
+window.resendSettlement = resendSettlement;
+window.quickSettle = quickSettle;
+
 // -----------------------------
 // Resend Settlement
 // -----------------------------
 async function resendSettlement(settlementId, toUserId, currentAmount) {
+  // Handle string IDs - ensure they're valid strings
+  if (typeof settlementId !== 'string') {
+    settlementId = String(settlementId);
+  }
+  if (typeof toUserId !== 'string') {
+    toUserId = String(toUserId);
+  }
+  // Remove any quotes or special characters that might cause issues
+  settlementId = settlementId.replace(/['"]/g, '').trim();
+  toUserId = toUserId.replace(/['"]/g, '').trim();
+  
+  if (!settlementId || !toUserId) {
+    showError("Invalid settlement or user ID");
+    return;
+  }
+  
   const newAmount = prompt("Enter the amount (or leave empty to keep current):", currentAmount);
   if (newAmount === null) {
     return; // User cancelled
@@ -1214,4 +1441,15 @@ async function resendSettlement(settlementId, toUserId, currentAmount) {
     console.error("Error resending settlement:", err);
     showError(err.message || "Failed to resend settlement");
   }
+}
+
+// Make functions globally accessible for inline handlers (if any remain)
+if (typeof window !== 'undefined') {
+  window.acceptSettlement = acceptSettlement;
+  window.rejectSettlement = rejectSettlement;
+  window.resendSettlement = resendSettlement;
+  window.quickSettle = quickSettle;
+  window.loadBalances = loadBalances;
+  window.loadSettlements = loadSettlements;
+  window.loadHistory = loadHistory;
 }

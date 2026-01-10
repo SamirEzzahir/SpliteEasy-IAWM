@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Expenses API</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { background: #f5f5f5; padding: 10px; margin: 10px 0; border-radius: 5px; }
+        .error { background: #ffebee; color: #c62828; }
+        .success { background: #e8f5e9; color: #2e7d32; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>Test Expenses API</h1>
+    
+    <div>
+        <h3>1. Test Authentication</h3>
+        <button onclick="testAuth()">Test Auth</button>
+        <div id="authResult" class="result"></div>
+    </div>
+
+    <div>
+        <h3>2. Test Get Expenses</h3>
+        <input type="text" id="groupId" placeholder="Enter Group ID" value="">
+        <button onclick="testGetExpenses()">Get Expenses</button>
+        <div id="expensesResult" class="result"></div>
+    </div>
+
+    <div>
+        <h3>3. Test Get Groups</h3>
+        <button onclick="testGetGroups()">Get Groups</button>
+        <div id="groupsResult" class="result"></div>
+    </div>
+
+    <script>
+        // Load config
+        const API_URL = 'http://127.0.0.1:8000/api';
+        
+        function getHeaders() {
+            const token = localStorage.getItem('token');
+            return {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`
+            };
+        }
+
+        async function testAuth() {
+            const resultDiv = document.getElementById('authResult');
+            try {
+                const res = await fetch(`${API_URL}/users/user/me`, {
+                    headers: getHeaders()
+                });
+                
+                if (res.ok) {
+                    const user = await res.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Auth Success: ${user.username} (${user.email})`;
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Auth Failed: ${res.status} ${res.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Auth Error: ${error.message}`;
+            }
+        }
+
+        async function testGetGroups() {
+            const resultDiv = document.getElementById('groupsResult');
+            try {
+                const res = await fetch(`${API_URL}/groups`, {
+                    headers: getHeaders()
+                });
+                
+                if (res.ok) {
+                    const groups = await res.json();
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Groups Success: ${groups.length} groups found<br><pre>${JSON.stringify(groups, null, 2)}</pre>`;
+                    
+                    // Auto-fill first group ID
+                    if (groups.length > 0) {
+                        document.getElementById('groupId').value = groups[0]._id;
+                    }
+                } else {
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Groups Failed: ${res.status} ${res.statusText}`;
+                }
+            } catch (error) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Groups Error: ${error.message}`;
+            }
+        }
+
+        async function testGetExpenses() {
+            const resultDiv = document.getElementById('expensesResult');
+            const groupId = document.getElementById('groupId').value;
+            
+            if (!groupId) {
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = '❌ Please enter a Group ID';
+                return;
+            }
+            
+            try {
+                const url = `${API_URL}/expenses/${groupId}?limit=10&page=1&_t=${Date.now()}`;
+                console.log('Testing URL:', url);
+                
+                const res = await fetch(url, {
+                    headers: getHeaders()
+                });
+                
+                console.log('Response status:', res.status);
+                console.log('Response headers:', [...res.headers.entries()]);
+                
+                if (res.ok) {
+                    const data = await res.json();
+                    console.log('Response data:', data);
+                    
+                    resultDiv.className = 'result success';
+                    resultDiv.innerHTML = `✅ Expenses Success:<br><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } else {
+                    const errorText = await res.text();
+                    console.log('Error response:', errorText);
+                    
+                    resultDiv.className = 'result error';
+                    resultDiv.innerHTML = `❌ Expenses Failed: ${res.status} ${res.statusText}<br>Response: ${errorText}`;
+                }
+            } catch (error) {
+                console.error('Fetch error:', error);
+                resultDiv.className = 'result error';
+                resultDiv.innerHTML = `❌ Expenses Error: ${error.message}`;
+            }
+        }
+
+        // Auto-test auth on load
+        window.onload = () => {
+            testAuth();
+        };
+    </script>
+</body>
+</html>
